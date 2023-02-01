@@ -1,0 +1,680 @@
+﻿<style type="text/css">
+    th, td {
+        /*use this property to disbale soft wrap*/
+        white-space: nowrap;
+        /*To make extra certain,add this css property*/
+        word-break: keep-all;
+    }
+
+    .ul_sort li {
+        display: inline;
+    }
+
+    th a {
+        color: white;
+    }
+</style>
+<div id="app-cheque-book-review">
+    <div class="row bg-title">
+        <div class="col-lg-8 col-md-6 col-sm-6 col-xs-12">
+            <h4 class="page-title">
+                <span>Cheque Book Review</span>
+                <img src="~/Content/Images/refreshing.gif" v-if="ui.is_loading" />
+            </h4>
+        </div>
+
+        <div class="col-lg-4 col-md-6 col-sm-6 col-xs-12">
+            <ul class="nav nav-pills pull-right" role="tablist">
+                <li class="nav-item" role="presentation">
+                </li>
+            </ul>
+
+        </div>
+    </div>
+    <div class="col-md-12">
+    
+
+        <div class="col-md-12">
+            <div class="row">
+                <div class="form-group col-md-6">
+                    <label class="control-label col-md-4">Issue ID</label>
+
+                    <div class="col-md-8">
+                        <input type="text" class="form-control input-sm" placeholder="Issue ID:" v-model="checkedItems" />
+                        <span v-if="validation.checkedItems" class="error"> {{validation.checkedItems}}</span>
+                        @*<input type="text" class="form-control input-sm" placeholder="Issue ID:" v-model="item.IssueID" />*@
+                    </div>
+                </div>
+
+                <div class="form-group col-md-6">
+                    <label class="control-label col-md-4">Cheque Start No</label>
+                    <div class="col-md-8">
+                        @*v-on:change="validateForm()"*@
+                        <input type="text" class="form-control input-sm" placeholder="Cheque Start No:" v-model="item.ChequeStartNo" />
+                        <span v-if="validation.ChequeStartNo" class="error"> {{validation.ChequeStartNo}}</span>
+
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group col-md-6">
+                    <label class="control-label col-md-4">No of Leaves</label>
+                    <div class="col-md-8">
+                        <input type="text" class="form-control input-sm"  placeholder="No of Leaves:" v-model="item.NoOfLeaves" />
+                        <span v-if="validation.NoOfLeaves" class="error"> {{validation.NoOfLeaves}}</span>
+
+                    </div>
+                </div>
+                
+            </div>
+            <hr />
+            <div class="row">
+                <div class="pull-right" style="margin-right:3%">
+                    <button type="button" class="btn btn-primary btn-sm" v-on:click="onUpdateChequeClick()">Update Cheque</button>
+                    @*<button type="button" class="btn btn-primary btn-sm" v-on:click="onUpdateRequisitionClick()">Update Requisition</button>*@
+                    <button type="button" class="btn btn-danger btn-sm" v-on:click="onUndoChequeClick()">Undo Cheque</button>
+                    <button type="button" class="btn btn-danger btn-sm" v-on:click="onUndoRequisitionClick()">Undo Requisition</button>
+                    @*<button type="button" class="btn btn-success btn-sm" v-on:click="onPrintClick()">Print </button>*@
+                    <button type="button" class="btn btn-primary btn-sm" v-on:click="onReviewChequeClick()">Review</button>
+                    <button type="button" class="btn btn-primary btn-sm" v-on:click="onReviewAllClick()">Review All</button>
+
+                </div>
+            </div>
+        </div>
+        @*<div class="col-md-3">*@
+        @*<button type="button" class="btn btn-primary btn-sm" v-on:click="onSearchClick()"><span class="glyphicon glyphicon-search"></span>Search </button>
+        <img src="~/Content/Images/refreshing.gif" v-if="ui.is_searching" />
+        <input type="button" id="btnReset" class="btn btn-danger btn-sm resetform" value="Reset" v-on:click="onResetClick()" />*@
+        @*</div>*@
+    </div>
+    <br />
+    <div class="row" v-if="chequeBookItem_SortFields.length>0">
+        <ul class="ul_sort">
+            <li v-for="(s,s_key) in chequeBookItem_SortFields" v-on:click="reverseSortOrder(s)">
+                <a title="click to sort in reverse order" href="javascript:void(0);" class="bordered-btn">
+                    {{s.sort_by_text}}
+                    <span class="glyphicon glyphicon-arrow-up" v-if="s.sort_order=='DESC'"></span>
+                    <span class="glyphicon glyphicon-arrow-down" v-else></span>
+                </a>
+            </li>
+            <li v-if="chequeBookItem_SortFields.length>0">
+                <span style="margin-left:10%"></span>
+                <a href="javascript:void(0);" v-on:click="clearSortFilter" class="bordered-btn" style="color:red">Clear Sorting</a>
+            </li>
+        </ul>
+    </div>
+    <div class="container" style="overflow-x: scroll">
+        <div class="row">
+            <div class="scrollme">
+                <table class="table table-bordered table-responsive">
+                    <thead class="bg-primary text-white">
+                        <tr>
+                            <th></th>
+                            <th scope="col">
+                                <a href="javascript:void(0);" v-if="sorting.sort_by=='Category'" title="click to sort" v-on:click="sortByThisCol('IssueID')">
+                                    Issue ID
+                                    <span>
+                                        <span v-if="sorting.sort_order=='DESC'" class="glyphicon glyphicon-arrow-up"></span>
+                                        <span v-if="sorting.sort_order=='ASC'" class="glyphicon glyphicon-arrow-down"></span>
+                                    </span>
+                                </a>
+                                <a title="click to sort by this column" href="javascript:void(0);" v-on:click="sortByThisCol('IssueID')" v-else>Issue ID</a>
+                            </th>
+                            <th>
+                                <a href="javascript:void(0);" v-if="sorting.sort_by=='CurrencyCode'" title="click to sort" v-on:click="sortByThisCol('CurrencyCode')">
+                                    Currency Code
+                                    <span><i v-if="sorting.sort_order=='DESC'" class="fas fa-sort-up"></i> <i v-if="sorting.sort_order=='ASC'" class="fas fa-sort-down"></i></span>
+                                </a>
+                                <a title="click to sort by this column" href="javascript:void(0);" v-on:click="sortByThisCol('CurrencyCode')" v-else>Currency Code</a>
+
+                            </th>
+                            <th>
+                                <a href="javascript:void(0);" v-if="sorting.sort_by=='AccountNo'" title="click to sort" v-on:click="sortByThisCol('AccountNo')">
+                                    Account No
+                                    <span><i v-if="sorting.sort_order=='DESC'" class="fas fa-sort-up"></i> <i v-if="sorting.sort_order=='ASC'" class="fas fa-sort-down"></i></span>
+                                </a>
+                                <a title="click to sort by this column" href="javascript:void(0);" v-on:click="sortByThisCol('AccountNo')" v-else>Account No</a>
+                            </th>
+                            <th>
+                                <a href="javascript:void(0);" v-if="sorting.sort_by=='BranchName'" title="click to sort" v-on:click="sortByThisCol('Branch.BranchName')">
+                                    Branch Name
+                                    <span><i v-if="sorting.sort_order=='DESC'" class="fas fa-sort-up"></i> <i v-if="sorting.sort_order=='ASC'" class="fas fa-sort-down"></i></span>
+                                </a>
+                                <a title="click to sort by this column" href="javascript:void(0);" v-on:click="sortByThisCol('Branch.BranchName')" v-else>Branch Name</a>
+                            </th>
+                            <th>
+                                <a href="javascript:void(0);" v-if="sorting.sort_by=='FullName'" title="click to sort" v-on:click="sortByThisCol('FullName')">
+                                    Full Name
+                                    <span><i v-if="sorting.sort_order=='DESC'" class="fas fa-sort-up"></i> <i v-if="sorting.sort_order=='ASC'" class="fas fa-sort-down"></i></span>
+                                </a>
+                                <a title="click to sort by this column" href="javascript:void(0);" v-on:click="sortByThisCol('FullName')" v-else>Full Name</a>
+                            </th>
+                            <th>Relationship No</th>
+                            <th>Relationship Type</th>
+                            <th>
+                                <a href="javascript:void(0);" v-if="sorting.sort_by=='ChequeStartNo'" title="click to sort" v-on:click="sortByThisCol('ChequeStartNo')">
+                                    Cheque Start No
+                                    <span><i v-if="sorting.sort_order=='DESC'" class="fas fa-sort-up"></i> <i v-if="sorting.sort_order=='ASC'" class="fas fa-sort-down"></i></span>
+                                </a>
+                                <a title="click to sort by this column" href="javascript:void(0);" v-on:click="sortByThisCol('ChequeStartNo')" v-else>Cheque Start No</a>
+                            </th>
+                            <th>Issue Date</th>
+                            <th>Req ID</th>
+                            <th>No of Leaves</th>
+                            <th>Book Status</th>
+                            <th>Maker ID</th>
+                            <th>Maker DateTime</th>
+                            <th>Checker ID</th>
+                            <th>Checker DateTime</th>
+                            <th>Checker IP Addr</th>
+                            <th>Status Flag</th>
+                            <th>Print Date</th>
+                            <th>L_Status</th>
+                            <th>L_PrintedDate</th>
+                            <th>C Noof Print</th>
+                            <th>Flat No</th>
+                            <th>Street</th>
+                            <th>Mobile</th>
+                            <th>InfoCode</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tr v-for="(item, key) in chequeBookItem_Paged" :key="key">
+                        <td>
+                            <input type="checkbox" v-bind:value="item.IssueID" v-model="master.selected" />
+                        </td>
+                        <td>{{item.IssueID}}</td>
+                        <td>{{item.CurrencyCode}}</td>
+                        <td>{{item.AccountNo}}</td>
+                        <td>{{item.Branch.BranchName}}</td>
+                        <td>{{item.FullName}}</td>
+                        <td>{{item.RelationShipNo}}</td>
+                        <td>{{item.RelationShipType}}</td>
+                        <td>{{item.ChequeStartNo}}</td>
+                        <td>{{item.IssueDate}}</td>
+                        <td>{{item.ReqID}}</td>
+                        <td>{{item.NoOfLeaves}}</td>
+                        <td>{{item.BookStatus}}</td>
+                        <td>{{item.MakerID}}</td>
+                        <td>{{item.MakerDateTime}}</td>
+                        <td>{{item.CheckerID}}</td>
+                        <td>{{item.CheckerDateTime}}</td>
+                        <td>{{item.CheckerIPAddress}}</td>
+                        <td>{{item.StatusFlag}}</td>
+                        <td>{{item.PrintDate}}</td>
+                        <td>{{item.LStatus}}</td>
+                        <td>{{item.LPrintedDate}}</td>
+                        <td>{{item.CNoOfPrint}}</td>
+                        <td>{{item.FlatNo}}</td>
+                        <td>{{item.Street}}</td>
+                        <td>{{item.Mobile}}</td>
+                        <td>{{item.InfoCode}}</td>
+                        <td>
+                            <a href="javascript:void(0)">Print</a>
+                        </td>
+
+                    </tr>
+                </table>
+            </div>
+            <div class="row mt-1">
+                <div class="col-sm-6">
+                    <p class="no-data">{{showingMToNOfXPages}}</p>
+                </div>
+                <div class="col-sm-6">
+                    <div class="vue-pagination-wrap text-sm-right">
+                        <paginate :page-count="paginationNoOfPages"
+                                  :click-handler="onNewPageClicked"
+                                  :prev-text="'Prev'"
+                                  :next-text="'Next'"
+                                  v-model="search.CurrentPage"
+                                  :container-class="'pagination m-0'">
+                        </paginate>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    Vue.component('paginate', VuejsPaginate);
+    var vm = new Vue({
+        el: '#app-cheque-book-review',
+        components: {
+        },
+        data: {
+            item: {
+                PrintAll: false,
+                ChequeStartNo: '',
+                NoOfLeaves: ''
+            },
+            ui: {
+                is_loading: false,
+                is_printing: false
+            },
+            master: {
+                cheque_book_print_items: [],
+                selected: []
+            },
+            search: {
+                ChequeType: 'Both',
+                FilterByMakerID: false,
+                CurrentPage: 1,
+                PerPage: 500,
+                Total: 0
+            },
+            sorting: {
+                sort_multiple: [
+                    {
+                        sort_by: '',
+                        sort_order: '',
+                        sort_by_text: ''
+                    }
+                ]
+            },
+
+            validation: {
+                checkedItems:0,
+                ChequeStartNo: '',
+                NoOfLeaves: ''
+            }
+        },
+        created: function () {
+            this.getChequeBookReviewtems();
+        },
+            methods: {
+                validateForm: function () {
+                    if (this.master.selected.length == 0) {
+                        this.validation.checkedItems = 'Issue ID: is required.';
+                    } else {
+                        this.validation.checkedItems = '';
+                    }
+                    if (this.item.ChequeStartNo == '') {
+                        this.validation.ChequeStartNo = 'ChequeStartNo: is required.';
+                    } else {
+                        this.validation.ChequeStartNo = '';
+                    }
+                    if (this.item.NoOfLeaves == '') {
+                        this.validation.NoOfLeaves = 'NoOfLeaves: is required.';
+                    } else {
+                        this.validation.NoOfLeaves = '';
+                    }
+                    
+                },
+
+                validateFormUndo: function () {
+                    if (this.master.selected.length == 0 || this.master.selected.length == null) {
+                        this.validation.checkedItems = 'Issue ID: is required.';
+                    } else {
+                        this.validation.checkedItems = '';
+                    }
+
+                },
+
+                onUpdateChequeClick: function () {
+                    if (confirm("Are you sure want to update Cheque?")) {
+
+                        this.validateForm();
+                        if (!this.isFormValidForAdd) return;
+
+                        //this.ui.is_saving = true;
+                        var checkedItem = this.master.selected;
+                        var NoOfLeaves = this.item.NoOfLeaves;
+                        var ChequeStartNo = this.item.ChequeStartNo;
+                        $.ajax({
+                            method: "POST",
+                            contentType: "application/json; charset=utf-8",
+                            url: "/ChequeBookReview/UpdateCheque",
+                            data: JSON.stringify({ checkedItem: checkedItem, NoOfLeaves: NoOfLeaves, ChequeStartNo: ChequeStartNo }),
+                        }).done(function (response) {
+                            if (response.success) {
+                                success('Cheque Updated Sucessfully');
+                                /*window.open(getBaseUrl() + '/ChequeBookReview/Index');*/
+                            } else {
+                                warning(response.message);
+                            }
+                            vm.ui.is_saving = false;
+                        }).fail(function (xhr, status, error) {
+                            vm.ui.is_saving = false;
+                            error_msg(error);
+                        })
+                    }
+                },
+
+                onReviewChequeClick: function () {
+                    if (confirm("Are you sure want to Review Cheque?")) {
+
+                        //this.validateForm();
+                        //if (!this.isFormValidForAdd) return;
+
+                        //this.ui.is_saving = true;
+                        var checkedItem = this.master.selected;
+                      
+                        $.ajax({
+                            method: "POST",
+                            contentType: "application/json; charset=utf-8",
+                            url: "/ChequeBookReview/RevieweCheque",
+                            data: JSON.stringify({ checkedItem: checkedItem }),
+                        }).done(function (response) {
+                            if (response.success) {
+                                success('Cheque Reviewed Sucessfully');
+                                /*window.open(getBaseUrl() + '/ChequeBookReview/Index');*/
+                            } else {
+                                warning(response.message);
+                            }
+                            vm.ui.is_saving = false;
+                        }).fail(function (xhr, status, error) {
+                            vm.ui.is_saving = false;
+                            error_msg(error);
+                        })
+                    }
+                },
+
+                onUpdateRequisitionClick: function () {
+                    if (confirm("Are you sure want to update Requisition?")) {
+                       
+                        this.validateForm();
+                        if (!this.isFormValidForAdd) return;
+                     
+                        //this.ui.is_saving = true;
+                        var checkedItem = this.master.selected;
+                        var NoOfLeaves = this.item.NoOfLeaves;
+                        var ChequeStartNo = this.item.ChequeStartNo;
+                        $.ajax({
+                            method: "POST",
+                            contentType: "application/json; charset=utf-8",
+                            url: "/ChequeBookReview/UpdateRequisition",
+                            data: JSON.stringify({ checkedItem: checkedItem, NoOfLeaves: NoOfLeaves, ChequeStartNo: ChequeStartNo }),
+                        }).done(function (response) {
+                            if (response.success) {
+                                success('Requisition Updated Sucessfully');
+                                /*window.open(getBaseUrl() + '/ChequeBookReview/Index');*/
+                            } else {
+                                warning(response.message);
+                            }
+                            vm.ui.is_saving = false;
+                        }).fail(function (xhr, status, error) {
+                            vm.ui.is_saving = false;
+                            error_msg(error);
+                        })
+                    }
+            },
+
+                onUndoChequeClick: function () {
+                    if (confirm("Are you sure want to Undo Cheque?")) {
+                        this.validateFormUndo();
+                        if (!this.isFormValidForAddUndo) return;
+
+                        //this.ui.is_saving = true;
+                        var checkedItem = this.master.selected;
+                        
+                        $.ajax({
+                            method: "POST",
+                            contentType: "application/json; charset=utf-8",
+                            url: "/ChequeBookReview/UndoCheque",
+                            data: JSON.stringify({ checkedItem: checkedItem }),
+                        }).done(function (response) {
+                            if (response.success) {
+                                success('Undo Cheque completed Sucessfully');
+                                /*window.open(getBaseUrl() + '/ChequeBookReview/Index');*/
+                            } else {
+                                warning(response.message);
+                            }
+                            vm.ui.is_saving = false;
+                        }).fail(function (xhr, status, error) {
+                            vm.ui.is_saving = false;
+                            error_msg(error);
+                        })
+                    }
+                },
+
+                onReviewAllClick: function () {
+                    if (confirm("Are you sure want to Review All Cheques?")) {
+                        //this.validateFormUndo();
+                        //if (!this.isFormValidForAddUndo) return;
+
+                        //this.ui.is_saving = true;
+                        debugger;
+                        //var checkedItem = this.master.selected;
+
+                        $.ajax({
+                            method: "POST",
+                            contentType: "application/json; charset=utf-8",
+                            url: "/ChequeBookReview/ReviewAll",
+                            //data: JSON.stringify({ checkedItem: checkedItem }),
+                        }).done(function (response) {
+                            if (response.success) {
+                                success('All cheque Reviewed completed Sucessfully');
+                                /*window.open(getBaseUrl() + '/ChequeBookReview/Index');*/
+                            } else {
+                                warning(response.message);
+                            }
+                            vm.ui.is_saving = false;
+                        }).fail(function (xhr, status, error) {
+                            vm.ui.is_saving = false;
+                            error_msg(error);
+                        })
+                    }
+                },
+
+                onUndoRequisitionClick: function () {
+                    if (confirm("Are you sure want to Undo Requisition?")) {
+                        this.validateFormUndo();
+                        if (!this.isFormValidForAddUndo) return;
+
+                        //this.ui.is_saving = true;
+                        var checkedItem = this.master.selected;
+
+                        $.ajax({
+                            method: "POST",
+                            contentType: "application/json; charset=utf-8",
+                            url: "/ChequeBookReview/UndoRequisition",
+                            data: JSON.stringify({ checkedItem: checkedItem }),
+                        }).done(function (response) {
+                            if (response.success) {
+                                success('Undo Requisition completed Sucessfully');
+                                /*window.open(getBaseUrl() + '/ChequeBookReview/Index');*/
+                            } else {
+                                warning(response.message);
+                            }
+                            vm.ui.is_saving = false;
+                        }).fail(function (xhr, status, error) {
+                            vm.ui.is_saving = false;
+                            error_msg(error);
+                        })
+                    }
+                },
+              
+            getChequeBookReviewtems: function () {
+                if (this.ui.is_loading == true) return;
+                this.ui.is_loading = true;
+                blockUI();
+                $.ajax({
+                    method: "GET",
+                    contentType: "application/json; charset=utf-8",
+                    url: "/ChequeBookReview/GetChequeBookReview",
+                    data: this.search
+                }).done(function (response) {
+                    if (response.success == true) {
+                        vm.master.cheque_book_print_items = response.result;
+                        if (vm.master.cheque_book_print_items.length > 0) {
+                            for (var i = 0; i < vm.master.cheque_book_print_items.length; i++) {
+                                vm.$set(vm.master.cheque_book_print_items[i], "UI_Checked", false);
+                            }
+                        }
+                        vm.search.Total = response.result2;
+                    } else {
+                        error_msg(response.message);
+                    }
+                    vm.ui.is_loading = false;
+                    $.unblockUI();
+                }).fail(function (xhr, status, error) {
+                    this.ui.is_loading = false;
+                    error_msg(error);
+                    $.unblockUI();
+                })
+            },
+           
+                onPrintClick: function () {
+                    debugger;
+                    var checkedItem = this.master.selected;
+                
+                if (this.master.selected.length > 0) {
+                    window.open(getBaseUrl() + '/ChequeBookPrint/Print?cheques=' + checkedItem + "&printLabel=false&byPass=false");
+                    } 
+                else {
+                    warning("Please select the items that needs to be printed."); 
+                }
+            },
+
+            onResetClick: function () {
+                this.search.CurrentPage = 1;
+                this.search.ChequeType = 'Both';
+                this.search.FilterByMakerID = false;
+                this.getChequeBookReviewtems();
+            },
+            onSearchClick: function () {
+                this.getChequeBookReviewtems();
+            },
+            onNewPageClicked: function (page) {
+                this.search.CurrentPage = page;
+                this.getChequeBookReviewtems();
+            },
+            clearSortFilter: function () {
+                this.sorting.sort_multiple = [
+                    {
+                        sort_by: '',
+                        sort_order: ''
+                    }
+                ];
+            },
+            reverseSortOrder: function (s) {
+                if (s.sort_order == 'ASC') s.sort_order = 'DESC';
+                else s.sort_order = 'ASC';
+            },
+            sortByThisCol: function (sortBy) {
+                if (this.chequeBookItem_Paged.length == 0) {
+                    return;
+                }
+                var sort_item = this.sorting.sort_multiple.find(x => x.sort_by == sortBy);
+                if (sort_item) {
+                    if (sort_item.sort_order == 'ASC') sort_item.sort_order = 'DESC'
+                    else sort_item.sort_order = 'ASC';
+                }
+                else {
+                    this.sorting.sort_multiple.push({
+                        sort_by: sortBy,
+                        sort_by_text: sortBy,
+                        sort_order: 'ASC'
+                    });
+                }
+            },
+        },
+            computed: {
+                isFormValidForAdd: function () {
+                    if (this.validation.checkedItems.length == 0 && this.validation.NoOfLeaves == ''  && this.validation.ChequeStartNo == '' ) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                    
+                    
+                },
+                isFormValidForAddUndo: function () {
+                    if (this.validation.checkedItems.length == 0) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+
+
+                },
+
+            checkedItems: function () {
+                if (!this.master.selected.length) return [];
+                return this.master.selected;
+            },
+
+            paginationNoOfPages: function () {
+                var mod = this.search.Total % this.search.PerPage;
+                var count = parseInt(this.search.Total / this.search.PerPage);
+                if (mod == 0) return count;
+                else return count + 1;
+            },
+            showingMToNOfXPages: function () {
+                if (this.search.Total == 0) return "No record found";
+                var M = (this.search.CurrentPage - 1) * this.search.PerPage + 1;
+                var N = this.search.CurrentPage * this.search.PerPage;
+                if (N > this.search.Total) N = this.search.Total;
+                var X = this.search.Total;
+                return "Showing " + M + " to " + N + " of " + X + " records";
+            },
+            chequeBookItem_Paged: function () {
+                console.log(this.chequeBookItem_SortCriteria);
+                var sortedList = Object.assign([], this.master.cheque_book_print_items);
+                sortedList.sort(fieldSorter(this.chequeBookItem_SortCriteria));
+                return sortedList;
+            },
+            chequeBookItem_SortCriteria: function () {
+                var criteria = [];
+                this.sorting.sort_multiple.forEach(function (x) {
+                    if (x.sort_order == 'ASC') {
+                        criteria.push(x.sort_by);
+                    }
+                    else {
+                        criteria.push('-' + x.sort_by);
+                    }
+                });
+                return criteria;
+            },
+            chequeBookItem_SortFields: function () {
+                var list = this.sorting.sort_multiple.filter(function (x) {
+                    return x.sort_by;
+                });
+
+                list.forEach(function (x) {
+                    if (x.sort_by == 'IssueID') {
+                        x.sort_by_text = 'Issue ID';
+                    }
+                    else if (x.sort_by == 'AccountNo') {
+                        x.sort_by_text = 'Account No';
+                    }
+                    else if (x.sort_by == 'CurrencyCode') {
+                        x.sort_by_text = 'Currency Code';
+                    }
+                    else if (x.sort_by == 'Branch.BranchName') {
+                        x.sort_by_text = 'Branch Name';
+                    }
+                    else if (x.sort_by == 'ChequeStartNo') {
+                        x.sort_by_text = 'Cheque Start No';
+                    }
+                    else if (x.sort_by == 'OnlineBanking') {
+                        x.sort_by_text = 'Online Banking';
+                    }
+                });
+
+                return list;
+            }
+        }
+    });
+
+    function fieldSorter(fields) {
+        return function (a, b) {
+            return fields
+                .map(function (o) {
+                    var dir = 1;
+                    if (o[0] === '-') {
+                        dir = -1;
+                        o = o.substring(1);
+                    }
+                    if (a[o] > b[o]) return dir;
+                    if (a[o] < b[o]) return -(dir);
+                    return 0; sss
+                })
+                .reduce(function firstNonZeroValue(p, n) {
+                    return p ? p : n;
+                }, 0);
+        };
+    }
+</script>
+

@@ -1,0 +1,177 @@
+﻿@model IEnumerable<ChequePrinting.BusinessLogicLayer.ViewModel.ChequeBookViewModel>
+@{
+    Layout = "";
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <style type="text/css">
+        body {
+            margin: 0;
+        }
+
+        .wrapper {
+            width: 724px;
+            margin: auto;
+        }
+
+        .inner-wrapper {
+            /*height: 300.9px;*/
+            height: 330px;
+            position:relative;
+            /*width: 100%;
+           
+            /* border: 1px solid #555*/
+        }
+
+        .left-section {
+            width: 309.9px;
+            height: 136px;
+            float: left;
+            /*border: 1px solid;*/
+            position: absolute;
+            top: 60.59px;
+        }
+
+        /*.top-section {
+            margin-top: 172.8px;
+            float: left;
+        }*/
+
+        .top-section {
+            bottom: 60px;
+            left: 315px;
+            float: left;
+            position: absolute;
+        }
+
+        /*account title - form up*/
+      /*  .class_C .top-section {
+            margin-top: 173.8px
+        }
+
+        .class_C .first-section {
+            margin-top: 54.4px;
+        }*/
+
+        /*left side*/
+        /*.first-section {
+            margin-top: 52.4px;
+            font-size: 12px;*/
+            /*margin-left:1.33px;*/
+        /*}*/
+
+        .first-section {
+            margin-top: 0;
+            font-size: 12px;
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+
+        .third-para{margin-bottom:0;}
+
+        /*.bottom-section {
+            margin-top: 48.13px;
+        }*/
+
+        .bottom-section {
+            position: absolute;
+            top: 60.97px;
+        }
+
+        p {
+            margin: 0;
+            margin-bottom: 34px;
+            line-height: 0.7;
+            margin-left: 40px;
+            font-size: 12px;
+        }
+        /*.bottomSpace-section {
+            padding-bottom: 52.13px;
+        }*/
+    </style>
+</head>
+<body>
+    @{
+        int i = 1;
+        Dictionary<int, string> chequeClass = new Dictionary<int, string>();
+        chequeClass.Add(1, "inner-wrapper class_A");
+        chequeClass.Add(2, "inner-wrapper class_B");
+        chequeClass.Add(3, "inner-wrapper class_C");
+    }
+        <div style="page-break-before: always; page-break-inside: initial" class="wrapper">
+            @foreach (var item in Model)
+            {
+                <div class="@chequeClass[i]">
+
+                    <div class="right-section">
+                        <div class="left-section"  style ="font-family : Arial;">
+                            <div class="first-section">
+                                @item.CustomerName <br />
+                                @item.FlatNo
+                            <div class="bottom-section">@item.Street <br />@item.Mobile </div>
+                            </div>
+                        </div>
+                        <div class="top-section"  style ="font-family : Arial;">
+                            @*<p class="first-para">Signature</p>*@
+                            <p class="first-para">@item.CustomerName</p>
+                            <p class="second-para"> @item.AccountNo</p>
+                            <p class="third-para">@item.Branch.BranchName</p>
+                        </div>
+
+                    </div>
+                </div>
+                @*<div class="bottomSpace-section">
+                        bottom section
+                    </div>*@
+                if (i == 3)
+                {
+                    //i = 0;
+                    i = 1;
+                }
+                else
+                {
+                    i++;
+                }
+                //if (i == 3)
+                //{
+                //    i = 0;
+                //}
+                //else
+                //{
+                //    i++;
+                //}
+            }
+        </div>
+</body>
+</html>
+
+
+
+
+
+
+
+    @*<div class="wrapper">
+        @foreach (var item in Model)
+        {
+            <div class="inside-wrapper">
+                @item.Branch.BranchName
+                <p class="top-text"> @item.AccountNo<br> @item.CustomerName</p>
+                <p class="bottom-text">
+                    @{ string res = "C" + item.ChequeNo1 + "C" + item.BankCode + "D" + item.Branch.BranchCode + "A" + item.AccountNo1 + "B";<span>@res</span>}
+            </div>
+
+        }
+
+    </div>*@
+
+<script type="text/javascript">
+    window.addEventListener('load', function () {
+        this.window.print();
+    })
+</script>
+
+
+

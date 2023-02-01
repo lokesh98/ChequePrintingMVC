@@ -1,0 +1,176 @@
+﻿<div class="container" id="app-database-connectivity-setup">
+    <div class="row">
+        <div class="panel panel-primary">
+            <div class="panel-heading"><i class="glyphicon glyphicon-cog"></i>&nbsp;&nbsp;Database Connectivity Setting</div>
+            <div class="panel panel-body">
+                <div class="col-md-12">
+                    <form>
+                        <div class="form-horizontal">
+                            <div class="row">
+                                <div class="form-group col-md-6">
+                                    <label class="control-label col-md-4">Data Source</label>
+                                    <div class="col-md-8">
+                                        <input type="text" v-model="item.DataSource" class="form-control input-sm" />
+                                        <span v-if="validation.DataSource" class="error"> {{validation.DataSource}}</span>
+                                    </div>
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label class="control-label col-md-4">Database Name</label>
+                                    <div class="col-md-8">
+                                        <input type="text" v-model="item.Database" class="form-control input-sm" />
+                                        <span v-if="validation.Database" class="error"> {{validation.Database}}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+
+                                <div class="form-group col-md-6">
+                                    <label class="control-label col-md-4">User Name</label>
+                                    <div class="col-md-8">
+                                        <input type="text" v-model="item.UserName" class="form-control input-sm" />
+                                        <span v-if="validation.UserName" class="error"> {{validation.UserName}}</span>
+                                    </div>
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label class="control-label col-md-4">Password</label>
+                                    <div class="col-md-8">
+                                        <input type="password" v-model="item.Password" class="form-control input-sm" />
+                                        <span v-if="validation.Password" class="error"> {{validation.Password}}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-md-6">
+                                    <label class="control-label col-md-4">Port Number</label>
+                                    <div class="col-md-8">
+                                        <input type="text" v-model="item.Port" class="form-control input-sm" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-md-12">
+                                    <div class="pull-right">
+                                        <input type="button" value="Save" class="btn btn-primary btn-sm" v-on:click="saveDbConnectivityInfo()" />
+                                        <span v-if="ui.is_saving"><img src="~/Content/Images/refreshing.gif" /></span>
+                                        <input type="button" value="Reset" class="btn btn-danger btn-sm" v-on:click="onResetClick()" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    var vm = new Vue({
+        el: '#app-database-connectivity-setup',
+        components: {
+        },
+        data: {
+            ui: {
+                is_saving: false
+            },
+            item: {
+                DataSource: '',
+                Database: '',
+                UserName: '',
+                Password: '',
+                Port: ''
+            },
+            validation: {
+                DataSource: '',
+                Database: '',
+                UserName: '',
+                Password: ''
+            }
+
+        },
+        created: function () {
+
+        },
+        methods: {
+
+            saveDbConnectivityInfo: function () {
+                if (this.ui.is_saving) return;
+                this.validateForm();
+
+                if (!this.isValid) return;
+                this.ui.is_saving = true;
+
+                $.ajax({
+                    method: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    url: "/DbConnectivity/SaveDbConnecitivityInfo",
+                    data: JSON.stringify(this.item),
+                }).done(function (response) {
+                    if (response.success) {
+                        vm.onResetClick();
+                        success("Database connectivity information saved successfully.");
+                        setTimeout(function () { window.location.href = getBaseUrl() + "/Home/Login" }, 1000);
+                    } else {
+                        warning(response.message);
+                    }
+                    vm.ui.is_saving = false;
+                }).fail(function (xhr, status, error) {
+                    vm.ui.is_saving = false;
+                    error_msg(error);
+                })
+            },
+            onResetClick: function () {
+                this.item.DataSource == '';
+                this.item.Database == '';
+                this.item.UserName == '';
+                this.item.Password == '';
+            },
+            validateForm: function () {
+                if (this.item.DataSource == '') {
+                    this.validation.DataSource = 'Data Source is required.';
+                } else {
+                    this.validation.DataSource = '';
+                }
+                if (this.item.Database == '') {
+                    this.validation.Database = 'Database name is required.';
+                } else {
+                    this.validation.Database = '';
+                }
+                if (this.item.UserName == '') {
+                    this.validation.UserName = 'Db username is required.';
+                } else {
+                    this.validation.UserName = '';
+                }
+                if (this.item.Password == '') {
+                    this.validation.Password = 'Password is required.';
+                } else {
+                    this.validation.Password = '';
+                }
+            }
+
+        },
+        computed: {
+            isValid: function () {
+                var res = false;
+                if (this.validation.Database == '' && this.validation.UserName == '' && this.validation.Password == '' && this.validation.DataSource == '') {
+                    res = true;
+                }
+                return res;
+            }
+
+        }
+
+    });
+
+    function isNumber(evt) {
+        evt = (evt) ? evt : window.event;
+        var charCode = (evt.which) ? evt.which : evt.keyCode;
+        if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+            return false;
+        }
+        return true;
+    }
+
+</script>
+

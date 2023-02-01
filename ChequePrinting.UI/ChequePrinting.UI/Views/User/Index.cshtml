@@ -1,0 +1,533 @@
+﻿<div id="app-user-management">
+    <div class="row bg-title">
+        <div class="col-lg-8 col-md-6 col-sm-6 col-xs-12">
+            <h4 class="page-title" style="cursor: s-resize;">
+                <span>User Management</span>
+                <img src="~/Content/Images/refreshing.gif" v-if="ui.is_loading" />
+            </h4>
+        </div>
+
+        <div class="col-lg-4 col-md-6 col-sm-6 col-xs-12">
+            <ul class="nav nav-pills pull-right" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <a href="javascript:void(0)" class="nav-link bg-primary" v-on:click="showModal()">Create New</a>
+                </li>
+            </ul>
+
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="col-md-5">
+                <div class="form-group">
+                    <label class="control-label col-md-4">User Name</label>
+                    <div class="col-md-8">
+                        <input type="text" class="form-control input-sm" placeholder="User Name" v-model="search.UserName" />
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+
+                <button type="button" :disable="ui.is_loading==true" class="btn btn-primary btn-sm" v-on:click="onSearchClick()">
+                    {{ui.is_loading==true? 'Searching...':'Search'}}
+                </button>
+                <button :disable="ui.is_exporting==true" type="button"  class="btn btn-success btn-sm" v-on:click="onExportClick()">
+                    Export To Excel
+                </button>
+                <img src="~/Content/Images/refreshing.gif" v-if="ui.is_exporting" />
+                <input type="button" id="btnReset" class="btn btn-danger btn-sm resetform" value="Reset" v-on:click="onResetClick()" />
+            </div>
+        </div>
+    </div><br />
+    <div class="container">
+        <div class="row">
+            <table class="table table-bordered table-responsive">
+                <thead class="bg-primary text-white">
+                    <tr>
+                        <th>User Code</th>
+                        <th>User Name</th>
+                        <th>Email</th>
+                        <th>Can Download</th>
+                        <th>Can Undo</th>
+                        <th>Is Locked</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Last Login</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tr v-for="(item, key) in master.user_lists" :key="key">
+                    <td>{{item.UserCode}}</td>
+                    <td>{{item.UserName}}</td>
+                    <td>{{item.Email}}</td>
+                    <td>{{item.CanDownload==true?'Yes':'No'}}</td>
+                    <td>{{item.CanUndoPrint==true?'Yes':'No'}}</td>
+                    <td>{{item.IsLocked==true?'Yes':'No'}}</td>
+                    <td>{{item.RoleName}}</td>
+                    <td>{{item.StatusName}}</td>
+                    <td>{{item.LastLogin}}</td>
+                    <td>
+                        <a href="javascript:void(0)" v-on:click="onEditClick(item)">Edit</a>
+                        |&nbsp;<a href="javascript:void(0)" v-on:click="onDeleteClick(item.UserCode)">Delete</a>
+                    </td>
+
+                </tr>
+            </table>
+            <div class="row mt-1">
+                <div class="col-sm-6">
+                    <p class="no-data">{{showingMToNOfXPages}}</p>
+                </div>
+                <div class="col-sm-6">
+                    <div class="vue-pagination-wrap text-sm-right">
+                        <paginate :page-count="paginationNoOfPages"
+                                  :click-handler="onNewPageClicked"
+                                  :prev-text="'Prev'"
+                                  :next-text="'Next'"
+                                  v-model="search.CurrentPage"
+                                  :container-class="'pagination m-0'">
+                        </paginate>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="userModal" role="dialog">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" v-on:click="closeModal()">&times;</button>
+                    <h4 class="modal-title"> {{item.Flag=='U'? 'Update User Information':'Add New User'}}</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="form-group col-md-6">
+                            <label class="control-label col-md-4">User Code</label>
+                            <div class="col-md-8">
+                                <input v-model="item.UserCode" :disable="item.Flag == 'U' " v-on:change="validateForm()" type="text" class="form-control" placeholder="User Code" />
+                                <span v-if="validation.UserCode" class="error"> {{validation.UserCode}}</span>
+                            </div>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label class="control-label col-md-4">User Name</label>
+                            <div class="col-md-8">
+                                <input v-model="item.UserName" v-on:change="validateForm()" type="text" class="form-control" placeholder="User Name" />
+                                <span v-if="validation.UserName" class="error"> {{validation.UserName}}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group col-md-6">
+                            <label class="control-label col-md-4">E-mail</label>
+                            <div class="col-md-8">
+                                <input v-model="item.Email" v-on:change="validateForm()" type="text" class="form-control" placeholder="Your E-mail" />
+                                <span v-if="validation.Email" class="error"> {{validation.Email}}</span>
+                            </div>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label class="control-label col-md-4">Role</label>
+                            <div class="col-md-8">
+                                <select v-model="item.RoleId" class="form-control" v-on:change="validateForm()">
+                                    <option value="">----Select-----</option>
+                                    <option v-for="(p,key1) in master.user_roles" :value="p.RoleId">{{p.RoleName}}</option>
+                                </select>
+                                <span v-if="validation.RoleId" class="error"> {{validation.RoleId}}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group col-md-6">
+                            <label class="control-label col-md-4">Status</label>
+                            <div class="col-md-8">
+                                <select v-model="item.StatusId" class="form-control" v-on:change="validateForm()">
+                                    <option value="">----Select-----</option>
+                                    <option v-for="(p,key1) in master.user_status" :value="p.StatusId">{{p.StatusName}}</option>
+                                </select>
+                                <span v-if="validation.StatusId" class="error"> {{validation.StatusId}}</span>
+                            </div>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label class="control-label col-md-4">Is Login</label>
+                            <div class="col-md-8">
+                                <select v-model="item.IsLogin" v-on:change="validateForm()" class="form-control">
+                                    <option value="1">Login</option>
+                                    <option value="0">LogOut</option>
+                                </select>
+                                <span v-if="validation.IsLogin" class="error"> {{validation.IsLogin}}</span>
+                            </div>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label class="control-label col-md-4">Lock</label>
+                            <div class="col-md-8">
+                                <select v-model="item.IsLocked" v-on:change="validateForm()" class="form-control">
+                                    <option value="false">UnLocked</option>
+                                    <option value="true">Locked</option>
+                                </select>
+                                <span v-if="validation.IsLock" class="error"> {{validation.IsLock}}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group col-md-6">
+                            <label class="control-label col-md-4">Allow Download</label>
+                            <div class="col-md-8">
+                                <input type="checkbox" v-model="item.CanDownload" />
+                            </div>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label class="control-label col-md-4">Can Undo Print</label>
+                            <div class="col-md-8">
+                                <input type="checkbox" v-model="item.CanUndoPrint" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button v-if="item.Flag=='N' " :disable="ui.is_saving==true" class="btn btn-primary rounded-0" v-on:click="saveNewUser()">Save</button>
+                    <button v-if="item.Flag=='U' " :disable="ui.is_saving==true" class="btn btn-primary rounded-0" v-on:click="updateUser()">Save Changes</button>
+                    <img src="~/Content/Images/refreshing.gif" v-if="ui.is_saving" />
+                    <button type="button" class="btn btn-default" v-on:click="closeModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    Vue.component('paginate', VuejsPaginate);
+    var vm = new Vue({
+        el: '#app-user-management',
+        components: {
+        },
+        data: {
+            ui: {
+                is_loading: false,
+                is_saving: false,
+                is_exporting: false
+            },
+            item: {
+                UserCode: '',
+                UserName: '',
+                Email: '',
+                RoleId: '',
+                RoleName: '',
+                StatusId: '',
+                StatusName:'',
+                Flag: 'N',
+                IsLogin: '0',
+                CanDownload: false,
+                CanUndoPrint: false,
+                IsLocked: true,
+            },
+            master: {
+                user_lists: [],
+                user_status: [],
+                user_roles: []
+            },
+            search: {
+                UserName: '',
+                CurrentPage: 1,
+                PerPage: 100,
+                Total: 0
+            },
+            validation: {
+                UserCode: '',
+                UserName: '',
+                Email: '',
+                RoleId:'',
+                StatusId: '',
+                IsLogin:''
+            }
+
+        },
+        created: function () {
+            this.getMasterData();
+            this.getUserLists();
+        },
+        methods: {
+            getMasterData: function () {
+                blockUI();
+                $.ajax({
+                    method: "GET",
+                    contentType: "application/json; charset=utf-8",
+                    url: "/User/GetMasterData",
+                }).done(function (response) {
+                    if (response.message == "SESSION_EXPIRED") {
+                        return logout();
+                    }
+                    if (response.success == true) {
+                        vm.master.user_status = response.result2;
+                        vm.master.user_roles = response.result;
+                    }
+                    else {
+                        error_msg(response.message);
+                    }
+                    $.unblockUI();
+                }).fail(function (xhr, status, error) {
+                    $.unblockUI();
+                    error_msg(error);
+                })
+            },
+            getUserLists: function () {
+                if (this.ui.is_loading == true) return;
+                this.ui.is_loading = true;
+                blockUI();
+                $.ajax({
+                    method: "GET",
+                    contentType: "application/json; charset=utf-8",
+                    url: "/User/GetUsers",
+                    data: this.search,
+                }).done(function (response) {
+                    if (response.message == "SESSION_EXPIRED") {
+                        return logout();
+                    }
+                    if (response.success == true) {
+                        vm.master.user_lists = response.result;                   
+                        vm.search.Total = response.result2;
+                        $.unblockUI();
+                    }
+                    else {
+                        error_msg(response.message);
+                    }
+                    vm.ui.is_loading = false;
+                }).fail(function (xhr, status, error) {
+                    vm.ui.is_loading = false;
+                    error_msg(error);
+                    $.unblockUI();
+                })
+            },
+            onSearchClick: function () {
+                this.search.CurrentPage = 1;
+                this.getUserLists();
+            },
+            onNewPageClicked: function (page) {
+                this.search.CurrentPage = page;
+                this.getUserLists();
+            },
+            
+            validateForm: function () {
+                if (this.item.UserCode == '') {
+                    this.validation.UserCode = 'UserCode is required.';
+                } else {
+                    this.validation.UserCode = '';
+                }
+                if (this.item.UserName == '') {
+                    this.validation.UserName = 'UserName is required.';
+                } else {
+                    this.validation.UserName = '';
+                }
+                if (this.item.RoleId == '') {
+                    this.validation.RoleId = 'Role is required.';
+                } else {
+                    this.validation.RoleId = '';
+                }
+                if (this.item.StatusId == '') {
+                    this.validation.StatusId = 'Status is required.';
+                } else {
+                    this.validation.StatusId = '';
+                }
+                if (this.item.Email == '') {
+                    this.validation.Email = 'E-mail is required.';
+                } else if (!validateEmailAddr(this.item.Email)) {
+                    this.validation.Email = 'Invalid E-mail provided';
+                } else {
+                    this.validation.Email = ''
+                }
+            },
+            resetValidation: function () {
+                this.validation.UserCode = '';
+                this.validation.UserName = '';
+                this.validation.RoleId = '';
+                this.validation.StatusId = '';
+                this.validation.Email = '';
+            },
+            updateUser: function () {
+                if (this.ui.is_saving) return;
+                this.validateForm();
+                if (!this.isFormValidForAdd) return;
+                this.ui.is_saving = true;
+
+                $.ajax({
+                    method: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    url: "/User/UpdateUser",
+                    data: JSON.stringify(this.item),
+                }).done(function (response) {
+                    if (response.success) {
+                        vm.updateRow();
+                        vm.closeModal();
+                        success('User updated successfully.');
+                    } else {
+                        warning(response.message);
+                    }
+                    vm.ui.is_saving = false;
+                }).fail(function (xhr, status, error) {
+                    vm.ui.is_saving = false;
+                    error_msg(error);
+                })
+            },
+            saveNewUser: function () {
+                if (this.ui.is_saving) return;
+                this.validateForm();
+                if (!this.isFormValidForAdd) return;
+                this.ui.is_saving = true;
+
+                $.ajax({
+                    method: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    url: "/User/AddNewUser",
+                    data: JSON.stringify(this.item),
+                }).done(function (response) {
+                    if (response.success) {
+                        vm.closeModal();
+                        vm.getUserLists();
+                        success('New user added successfully.');
+                    } else {
+                        warning(response.message);
+                    }
+                    vm.ui.is_saving = false;
+                }).fail(function (xhr, status, error) {
+                    vm.ui.is_saving = false;
+                    error_msg(error);
+                })
+            },
+            reset: function () {
+                this.resetValidation();
+                this.item.UserCode = '';
+                this.item.UserName = '';
+                this.item.RoleId = '';
+                this.item.StatusId = '';
+                this.item.Email = '';
+                this.item.IsLogin = '';
+                this.item.Flag = 'N';
+                this.item.IsLogin= '0';
+                this.item.CanDownload = false;
+                this.item.CanUndoPrint = false;
+                this.item.IsLocked = false;
+            },
+            onEditClick: function (dataItem) {
+    
+                this.item.UserCode = dataItem.UserCode;
+                this.item.UserName = dataItem.UserName;
+                this.item.RoleId = dataItem.RoleId;
+                this.item.RoleName = dataItem.RoleName;
+                this.item.StatusId = dataItem.StatusId;
+                this.item.StatusName = dataItem.StatusName;
+                this.item.Email = dataItem.Email;
+                this.item.IsLogin = dataItem.IsLogin;
+                this.item.CanDownload = dataItem.CanDownload;
+                this.item.CanUndoPrint = dataItem.CanUndoPrint;
+                this.item.IsLocked = dataItem.IsLocked;
+                this.item.Flag = 'U';
+                this.showModal();
+            },
+            updateRow: function () {
+                var currentRec = vm.master.user_lists.find(x => x.UserCode == vm.item.UserCode);
+                if (currentRec) {
+                    let role = vm.master.user_roles.find(x => x.RoleId == vm.item.RoleId);
+                    let _status = vm.master.user_status.find(x => x.StatusId == vm.item.StatusId);
+                    currentRec.UserName = vm.item.UserName;
+                    currentRec.RoleId = vm.item.RoleId;
+                    currentRec.RoleName = role.RoleName;
+                    currentRec.Email = vm.item.Email;
+                    currentRec.StatusId = vm.item.StatusId;
+                    currentRec.IsLogin = vm.item.IsLogin;
+                    currentRec.IsLocked = vm.item.IsLocked;
+                    currentRec.StatusName = _status.StatusName;
+                    currentRec.CanDownload = vm.item.CanDownload;
+                    currentRec.CanUndoPrint = vm.item.CanUndoPrint;
+                }
+            },
+            onDeleteClick: function (userId) {
+                if (confirm("Are you sure want to delete this user ?")) {
+                    $.ajax({
+                        method: "POST",
+                        contentType: "application/json; charset=utf-8",
+                        url: "/User/DeleteUser",
+                        data: JSON.stringify({ userId: userId }),
+                    }).done(function (response) {
+                        if (response.success) {
+                            const itemIndex = vm.master.user_lists.findIndex(x => x.UserCode == userId);
+                            if (itemIndex !== -1) {
+                                vm.master.user_lists.splice(itemIndex, 1);
+                                vm.search.Total = parseInt(vm.search.Total) - 1;
+                                success('User Deleted successfully.');
+                            }
+                        } else {
+                            warning(response.message);
+                        }
+                    }).fail(function (xhr, status, error) {
+                        error_msg(error);
+                    })
+                }
+            },
+            onExportClick: function () {
+                if (this.ui.is_exporting) return;
+                this.ui.is_exporting = true;
+                $.ajax({
+                    method: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    url: "/User/ExportToExcel",
+                    data: JSON.stringify(this.search),
+                }).done(function (response) {
+                    if (response.success == true) {
+                        vm.ui.is_exporting = false;
+                        window.location = '/User/Download';
+                    } else {
+                        vm.ui.is_exporting = false;
+                        error_msg(response.message);
+                    }
+                    vm.ui.is_exporting = false;
+                }).fail(function (xhr, status, error) {
+                    error_msg(error);
+                    vm.ui.is_exporting = false;
+                })
+            },
+            onResetClick: function () {
+                this.search.UserName = '';
+                this.search.CurrentPage = 1;
+                this.search.PerPage = 10;
+                this.search.Total = 0;
+                this.getUserLists();
+            },
+            showModal: function () {
+                $("#userModal").modal('show');
+            },
+            closeModal: function () {
+                this.reset()
+                $("#userModal").modal('hide');
+            },
+        },
+        computed: {
+            isFormValidForAdd: function () {
+                if (this.validation.UserCode == '' && this.validation.UserName == ''  && this.validation.RoleId == '' && this.validation.StatusId == '' && this.validation.Email == '') {
+                    return true;
+                } else {
+                    return false;
+                }
+            },
+            paginationNoOfPages: function () {
+                var mod = this.search.Total % this.search.PerPage;
+                var count = parseInt(this.search.Total / this.search.PerPage);
+                if (mod == 0) return count;
+                else return count + 1;
+            },
+            showingMToNOfXPages: function () {
+                if (this.search.Total == 0) return "No record found";
+                var M = (this.search.CurrentPage - 1) * this.search.PerPage + 1;
+                var N = this.search.CurrentPage * this.search.PerPage;
+                if (N > this.search.Total) N = this.search.Total;
+                var X = this.search.Total;
+                return "Showing " + M + " to " + N + " of " + X + " records";
+            },
+        }
+    });
+
+    function validateEmailAddr(email) {
+        var expr = /^([\w-\.]+)@@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([\w-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/;
+        return expr.test((email));
+    }
+</script>
+

@@ -1,0 +1,38 @@
+﻿@model IEnumerable<ChequePrinting.BusinessLogicLayer.ViewModel.MenuViewModel>
+
+<div>
+    <ul class="nav navbar-nav">
+        @{
+            var main_menu = Model.Where(x => x.MenuParentId == 0).OrderBy(x => x.MenuOrderingNo);
+            foreach (var item in main_menu)
+            {
+                var sub_menu = Model.Where(s => s.MenuParentId == item.MenuId).OrderBy(x => x.SubMenuOrderNo);
+
+                if (sub_menu.Count() > 0)
+                {
+                    <li class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                            @item.MenuName
+                            <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            @foreach (var subItem in sub_menu)
+                            {
+                                <li><a href="/@subItem.MenuUrl"> @subItem.MenuName</a></li>
+                            }
+                        </ul>
+                    </li>
+                }
+                else
+                {
+                    <li>
+                        <a href="/@item.MenuUrl">@item.MenuName</a>
+                    </li>
+                }
+            }
+
+        }
+    </ul>
+</div>
+
+

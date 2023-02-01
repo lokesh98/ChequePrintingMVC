@@ -1,0 +1,474 @@
+﻿<style type="text/css">
+    th, td {
+        /*use this property to disbale soft wrap*/
+        white-space: nowrap;
+        /*To make extra certain,add this css property*/
+        word-break: keep-all;
+    }
+    .ul_sort li {
+        display: inline;
+    }
+
+    th a{
+        color:white;
+    }
+</style>
+<div id="app-requisition-form">
+    <div class="row bg-title">
+        <div class="col-lg-8 col-md-6 col-sm-6 col-xs-12">
+            <h4 class="page-title">
+                <span>Requisition Form Print</span>
+                <img src="~/Content/Images/refreshing.gif" v-if="ui.is_loading" />
+            </h4>
+        </div>
+        <div class="col-lg-4 col-md-6 col-sm-6 col-xs-12">
+            <ul class="nav nav-pills pull-right" role="tablist">
+                <li class="nav-item" role="presentation">
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="col-md-12">
+        <div class="row">
+            <div class="form-group col-md-4">
+                <label class="control-label col-md-6">Filter By</label>
+                <div class="col-md-6">
+                    <select class="form-control input-sm" v-model="search.ChequeType" v-on:change="onSearchClick()">
+                        <option value="Both">Both</option>
+                        <option value="I">Individual</option>
+                        <option value="C">Corporate</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group col-md-4">
+                <label class="control-label col-md-6">ByPass Print</label>
+                <div class="col-md-6">
+                    <input type="checkbox" v-model="item.ByPassPrint" />
+                </div>
+            </div>
+
+            <div class="form-group col-md-4">
+                <label class="control-label col-md-6">Print All</label>
+                <div class="col-md-6">
+                    <input type="checkbox" v-model="item.PrintAll" />
+                </div>
+            </div>
+        </div>
+        <div class="row">
+
+            <div class="form-group col-md-4">
+                <label class="control-label col-md-6">Print Label</label>
+                <div class="col-md-6">
+                    <input type="checkbox" v-model="item.PrintLabel" />
+                </div>
+            </div>
+            <div class="form-group col-md-4">
+                <label class="control-label col-md-6">Filter Items (By Maker ID)</label>
+                <div class="col-md-6">
+                    <input type="checkbox" v-model="search.FilterByMakerID" />
+                </div>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="form-group">
+
+            </div>
+        </div>
+        <div class="col-md-3">
+            <button type="button" class="btn btn-primary btn-sm" v-on:click="onPrintClick()"><span class="glyphicon glyphicon-print"></span>Print </button>
+            <button type="button" class="btn btn-primary btn-sm" v-on:click="onSearchClick()"><span class="glyphicon glyphicon-search"></span>Search </button>
+            <img src="~/Content/Images/refreshing.gif" v-if="ui.is_searching" />
+            <input type="button" id="btnReset" class="btn btn-danger btn-sm resetform" value="Reset" v-on:click="onResetClick()" />
+        </div>
+    </div>
+    <br />
+    <div class="row" v-if="requisitionItem_SortFields.length>0">
+        <ul class="ul_sort">
+            <li v-for="(s,s_key) in requisitionItem_SortFields" v-on:click="reverseSortOrder(s)">
+                <a title="click to sort in reverse order" href="javascript:void(0);" class="bordered-btn">
+                    {{s.sort_by_text}}
+                    <span class="glyphicon glyphicon-arrow-up" v-if="s.sort_order=='DESC'"></span>
+                    <span class="glyphicon glyphicon-arrow-down" v-else></span>
+                </a>
+            </li>
+            <li v-if="requisitionItem_SortFields.length>0">
+                <span style="margin-left:10%"></span>
+               <a href="javascript:void(0);"  v-on:click="clearSortFilter" class="bordered-btn" style="color:red">Clear Sorting</a>
+            </li>
+        </ul>
+    </div>
+    <div class="container" style="overflow-x: scroll">
+        <div class="row">
+            <div class="scrollme">
+                <table class="table table-bordered table-responsive">
+                    <thead class="bg-primary text-white">
+                        <tr>
+                            <th></th>
+                            <th scope="col">
+                                <a href="javascript:void(0);" v-if="sorting.sort_by=='Category'" title="click to sort" v-on:click="sortByThisCol('IssueID')">
+                                    Issue ID
+                                    <span>
+                                        <span v-if="sorting.sort_order=='DESC'" class="glyphicon glyphicon-arrow-up"></span>
+                                        <span v-if="sorting.sort_order=='ASC'" class="glyphicon glyphicon-arrow-down"></span>
+                                    </span>
+                                </a>
+                                <a title="click to sort by this column" href="javascript:void(0);" v-on:click="sortByThisCol('IssueID')" v-else>Issue ID</a>
+                            </th>
+                            <th>
+                                <a  href="javascript:void(0);" v-if="sorting.sort_by=='CurrencyCode'" title="click to sort" v-on:click="sortByThisCol('CurrencyCode')">
+                                    Currency Code
+                                    <span><i v-if="sorting.sort_order=='DESC'" class="fas fa-sort-up"></i> <i v-if="sorting.sort_order=='ASC'" class="fas fa-sort-down"></i></span>
+                                </a>
+                                <a title="click to sort by this column" href="javascript:void(0);" v-on:click="sortByThisCol('CurrencyCode')" v-else>Currency Code</a>
+
+                            </th>
+                            <th>
+                                <a href="javascript:void(0);" v-if="sorting.sort_by=='AccountNo'" title="click to sort" v-on:click="sortByThisCol('AccountNo')">
+                                    Account No
+                                    <span><i v-if="sorting.sort_order=='DESC'" class="fas fa-sort-up"></i> <i v-if="sorting.sort_order=='ASC'" class="fas fa-sort-down"></i></span>
+                                </a>
+                                <a title="click to sort by this column" href="javascript:void(0);" v-on:click="sortByThisCol('AccountNo')" v-else>Account No</a>
+                            </th>
+                            <th>                                
+                                <a href="javascript:void(0);" v-if="sorting.sort_by=='OnlineBanking'" title="click to sort" v-on:click="sortByThisCol('OnlineBanking')">
+                                    Online Banking
+                                    <span><i v-if="sorting.sort_order=='DESC'" class="fas fa-sort-up"></i> <i v-if="sorting.sort_order=='ASC'" class="fas fa-sort-down"></i></span>
+                                </a>
+                                <a title="click to sort by this column" href="javascript:void(0);" v-on:click="sortByThisCol('OnlineBanking')" v-else>Online Banking</a>
+
+                            </th>
+                            <th>
+                                <a href="javascript:void(0);" v-if="sorting.sort_by=='BranchName'" title="click to sort" v-on:click="sortByThisCol('Branch.BranchName')">
+                                    Branch Name
+                                    <span><i v-if="sorting.sort_order=='DESC'" class="fas fa-sort-up"></i> <i v-if="sorting.sort_order=='ASC'" class="fas fa-sort-down"></i></span>
+                                </a>
+                                <a title="click to sort by this column" href="javascript:void(0);" v-on:click="sortByThisCol('Branch.BranchName')" v-else>Branch Name</a>
+                            </th>
+                            <th>                                
+                                <a href="javascript:void(0);" v-if="sorting.sort_by=='FullName'" title="click to sort" v-on:click="sortByThisCol('FullName')">
+                                    Full Name
+                                    <span><i v-if="sorting.sort_order=='DESC'" class="fas fa-sort-up"></i> <i v-if="sorting.sort_order=='ASC'" class="fas fa-sort-down"></i></span>
+                                </a>
+                                <a title="click to sort by this column" href="javascript:void(0);" v-on:click="sortByThisCol('FullName')" v-else>Full Name</a>
+                            </th>
+                            <th>Relationship No</th>
+                            <th>Relationship Type</th>
+                            <th>
+                                <a href="javascript:void(0);" v-if="sorting.sort_by=='ChequeStartNo'" title="click to sort" v-on:click="sortByThisCol('ChequeStartNo')">
+                                    Cheque Start No
+                                    <span><i v-if="sorting.sort_order=='DESC'" class="fas fa-sort-up"></i> <i v-if="sorting.sort_order=='ASC'" class="fas fa-sort-down"></i></span>
+                                </a>
+                                <a title="click to sort by this column" href="javascript:void(0);" v-on:click="sortByThisCol('ChequeStartNo')" v-else>Cheque Start No</a>
+                            </th>
+                            <th>Issue Date</th>
+                            <th>Req ID</th>
+                            <th>No of Leafs</th>
+                            <th>Book Status</th>
+                            <th>Maker ID</th>
+                            <th>Maker DateTime</th>
+                            <th>Checker ID</th>
+                            <th>Checker DateTime</th>
+                            <th>Checker IP Addr</th>
+                            <th>Status Flag</th>
+                            <th>Print Date</th>
+                            <th>L_Status</th>
+                            <th>L_PrintedDate</th>
+                            <th>C Noof Print</th>
+                            <th>Flat No</th>
+                            <th>Street</th>
+                            <th>Mobile</th>
+                            <th>InfoCode</th>
+                            @*<th>Action</th>*@
+                        </tr>
+                    </thead>
+                    <tr v-for="(item, key) in requisitionItem_Paged" :key="key">
+                        <td>
+                            <input type="checkbox" v-model="item.UI_Checked" />
+                        </td>
+                        <td>{{item.IssueID}}</td>
+                        <td>{{item.CurrencyCode}}</td>
+                        <td>{{item.AccountNo}}</td>
+                        <td>{{item.OnlineBanking}}</td>
+                        @*<td>{{item.BookStatus}}</td>*@
+                        <td>{{item.Branch.BranchName}}</td>
+                        <td>{{item.FullName}}</td>
+                        <td>{{item.RelationShipNo}}</td>
+                        <td>{{item.RelationShipType}}</td>
+                        <td>{{item.ChequeStartNo}}</td>
+                        <td>{{item.IssueDate}}</td>
+                        <td>{{item.ReqID}}</td>
+                        <td>{{item.NoOfLeafs}}</td>
+                        <td>{{item.BookStatus}}</td>
+                        <td>{{item.MakerID}}</td>
+                        <td>{{item.MakerDateTime}}</td>
+                        <td>{{item.CheckerID}}</td>
+                        <td>{{item.CheckerDateTime}}</td>
+                        <td>{{item.CheckerIPAddress}}</td>
+                        <td>{{item.StatusFlag}}</td>
+                        <td>{{item.PrintDate}}</td>
+                        <td>{{item.LStatus}}</td>
+                        <td>{{item.LPrintedDate}}</td>
+                        <td>{{item.CNoOfPrint}}</td>
+                        <td>{{item.FlatNo}}</td>
+                        <td>{{item.Street}}</td>
+                        <td>{{item.Mobile}}</td>
+                        <td>{{item.InfoCode}}</td>
+                        @*<td>
+                            <a href="javascript:void(0)">Print</a>
+                        </td>*@
+
+                    </tr>
+                </table>
+            </div>
+            <div class="row mt-1">
+                <div class="col-sm-6">
+                    <p class="no-data">{{showingMToNOfXPages}}</p>
+                </div>
+                <div class="col-sm-6">
+                    <div class="vue-pagination-wrap text-sm-right">
+                        <paginate :page-count="paginationNoOfPages"
+                                  :click-handler="onNewPageClicked"
+                                  :prev-text="'Prev'"
+                                  :next-text="'Next'"
+                                  v-model="search.CurrentPage"
+                                  :container-class="'pagination m-0'">
+                        </paginate>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    Vue.component('paginate', VuejsPaginate);
+    var vm = new Vue({
+        el: '#app-requisition-form',
+        components: {
+        },
+        data: {
+            item: {
+                ByPassPrint:false,
+                PrintAll: false,
+                PrintLabel: false
+            },
+            ui: {
+                is_loading: false,
+                is_printing: false
+            },
+            master: {
+                requisition_items: []
+            },
+            search: {
+                ChequeType: 'Both',
+                FilterByMakerID: false,
+                CurrentPage: 1,
+                PerPage: 500,
+                Total: 0
+            },
+            sorting: {
+                sort_multiple: [
+                    {
+                        sort_by: '',
+                        sort_order: '',
+                        sort_by_text:''
+                    }
+                ]
+            }
+
+        },
+        created: function () {
+            this.getRequistionItems();
+        },
+        methods: {
+            getRequistionItems: function () {
+                if (this.ui.is_loading == true) return;
+                this.ui.is_loading = true;
+                blockUI();
+                $.ajax({
+                    method: "GET",
+                    contentType: "application/json; charset=utf-8",
+                    url: "/RequisitionForm/GetRequisitionItems",
+                    data: this.search
+                }).done(function (response) {
+                    if (response.message == "SESSION_EXPIRED") {
+                        return logout();
+                    }
+                    if (response.success == true) {
+                        vm.master.requisition_items = response.result;
+                        if (vm.master.requisition_items.length > 0) {
+                            for (var i = 0; i < vm.master.requisition_items.length; i++) {
+                                vm.$set(vm.master.requisition_items[i], "UI_Checked", false);
+                            }
+                        }
+                        vm.search.Total = response.result2;
+                    } else {
+                        error_msg(response.message);
+                    }
+                    vm.ui.is_loading = false;
+                    $.unblockUI();
+                }).fail(function (xhr, status, error) {
+                    this.ui.is_loading = false;
+                    error_msg(error);
+                    $.unblockUI();
+                })
+            },
+            onPrintClick: function () {
+                if (this.item.PrintAll == true && this.master.requisition_items.length > 0) {
+                    var alreadyPrintedItems = this.master.requisition_items.filter(x => x.CNoOfPrint == 1);
+                    let tmpData = {};
+                    if (alreadyPrintedItems.length > 0) {
+                        tmpData = alreadyPrintedItems.map(a => a.IssueID);
+                        warning("Cannot Print this Requisition Form: " + tmpData.join(",") + ". Already Printed.");
+                    } else {
+                        window.open(getBaseUrl() + '/RequisitionForm/PrintRequisition?requistion=' + this.printItems + "&printLabel=" + this.item.PrintLabel + "&byPass=" + this.item.ByPassPrint);
+                    }
+                }
+                else if (this.printItems.length>0) {
+                    window.open(getBaseUrl() + '/RequisitionForm/PrintRequisition?requistion=' + this.printItems + "&printLabel=" + this.item.PrintLabel + "&byPass=" + this.item.ByPassPrint);
+                } else {
+                    warning('Please select the items for printing.')
+                }
+            },
+            onResetClick: function () {
+                this.search.CurrentPage = 1;
+                this.search.ChequeType = 'Both';
+                this.search.FilterByMakerID = false;
+                this.getRequistionItems();
+            },
+            onSearchClick: function () {
+                this.getRequistionItems();
+            },
+            onNewPageClicked: function (page) {
+                this.search.CurrentPage = page;
+                this.getRequistionItems();
+            },
+            clearSortFilter: function () {
+                this.sorting.sort_multiple = [
+                    {
+                        sort_by: '',
+                        sort_order: ''
+                    }
+                ];
+            },
+            reverseSortOrder: function (s) {
+                if (s.sort_order == 'ASC') s.sort_order = 'DESC';
+                else s.sort_order = 'ASC';
+            },
+            sortByThisCol: function (sortBy) {
+                if (this.requisitionItem_Paged.length == 0) {
+                    return;
+                }
+                var sort_item = this.sorting.sort_multiple.find(x => x.sort_by == sortBy);
+                if (sort_item) {
+                    if (sort_item.sort_order == 'ASC') sort_item.sort_order = 'DESC'
+                    else sort_item.sort_order = 'ASC';
+                }
+                else {
+                    this.sorting.sort_multiple.push({
+                        sort_by: sortBy,
+                        sort_by_text: sortBy,
+                        sort_order: 'ASC'
+                    });
+                }
+            },
+        },
+        computed: {
+            printItems: function () {
+             
+                if (this.master.requisition_items.length == 0) return;
+                if (this.item.PrintAll == true && this.master.requisition_items.length > 0) {
+                    var alreadyPrintedItems = this.master.requisition_items.filter(x => x.LNoOfPrint == 0);
+                    let tmpData = {};
+                    if (alreadyPrintedItems.length > 0) {
+                        tmpData = alreadyPrintedItems.map(a => a.IssueID);
+                        return tmpData;
+                    }
+                } else {
+                    var items = this.master.requisition_items.filter(x => x.CNoOfPrint == 0 && x.UI_Checked == true);
+                    let tmpData = items.map(a => a.IssueID);
+                    return tmpData;
+                }
+            },
+
+            paginationNoOfPages: function () {
+                var mod = this.search.Total % this.search.PerPage;
+                var count = parseInt(this.search.Total / this.search.PerPage);
+                if (mod == 0) return count;
+                else return count + 1;
+            },
+            showingMToNOfXPages: function () {
+                if (this.search.Total == 0) return "No record found";
+                var M = (this.search.CurrentPage - 1) * this.search.PerPage + 1;
+                var N = this.search.CurrentPage * this.search.PerPage;
+                if (N > this.search.Total) N = this.search.Total;
+                var X = this.search.Total;
+                return "Showing " + M + " to " + N + " of " + X + " records";
+            },
+            requisitionItem_Paged: function () {
+                console.log(this.requisitionItem_SortCriteria);
+                var sortedList = Object.assign([], this.master.requisition_items);
+                sortedList.sort(fieldSorter(this.requisitionItem_SortCriteria));
+                return sortedList;
+            },
+            requisitionItem_SortCriteria: function () {
+                var criteria = [];
+                this.sorting.sort_multiple.forEach(function (x) {
+                    if (x.sort_order == 'ASC') {
+                        criteria.push(x.sort_by);
+                    }
+                    else {
+                        criteria.push('-' + x.sort_by);
+                    }
+                });
+                return criteria;
+            },
+            requisitionItem_SortFields: function () {
+                var list = this.sorting.sort_multiple.filter(function (x) {
+                    return x.sort_by;
+                });
+
+                list.forEach(function (x) {
+                    if (x.sort_by == 'IssueID') {
+                        x.sort_by_text = 'Issue ID';
+                    }
+                    else if (x.sort_by == 'AccountNo') {
+                        x.sort_by_text = 'Account No';
+                    }
+                    else if (x.sort_by == 'CurrencyCode') {
+                        x.sort_by_text = 'Currency Code';
+                    }
+                    else if (x.sort_by == 'Branch.BranchName') {
+                        x.sort_by_text = 'Branch Name';
+                    }
+                    else if (x.sort_by == 'ChequeStartNo') {
+                        x.sort_by_text = 'Cheque Start No';
+                    }
+                    else if (x.sort_by == 'OnlineBanking') {
+                        x.sort_by_text = 'Online Banking';
+                    }
+                });
+
+                return list;
+            }
+
+        }
+    });
+    function fieldSorter(fields) {
+        return function (a, b) {
+            return fields
+                .map(function (o) {
+                    var dir = 1;
+                    if (o[0] === '-') {
+                        dir = -1;
+                        o = o.substring(1);
+                    }
+                    if (a[o] > b[o]) return dir;
+                    if (a[o] < b[o]) return -(dir);
+                    return 0;sss
+                })
+                .reduce(function firstNonZeroValue(p, n) {
+                    return p ? p : n;
+                }, 0);
+        };
+    }
+</script>

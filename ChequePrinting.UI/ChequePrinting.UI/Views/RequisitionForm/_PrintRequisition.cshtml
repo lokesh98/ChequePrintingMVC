@@ -1,0 +1,174 @@
+﻿@model IEnumerable<ChequePrinting.BusinessLogicLayer.ViewModel.ChequeBookViewModel>
+@{
+    Layout = "";
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <style type="text/css">
+        body {
+            margin: 0;
+        }
+
+        .wrapper {
+            width: 724px;
+            margin: auto;
+ height: 287px;
+  
+        }
+
+        .inner-wrapper {
+       
+            height: 287px;
+            
+            /*width: 100%;
+           
+            /* border: 1px solid #555*/
+		margin-top: 40px;
+		margin-left: 58px;	
+        }
+
+        .left-section {
+            width: 309.9px;
+            height: 136px;
+            float: left;
+            /*border: 1px solid;*/
+          margin-top:10px;
+            top: 60.59px;
+        }
+
+     
+
+        .top-section {
+
+           margin-top :157px;
+            left: 315px;
+            float: left;
+           
+        }
+
+  
+    
+
+        .first-section {
+            margin-top: 15px;
+            font-size: 11px;
+           
+            left: 0;
+            top: 0;
+        }
+
+ .first-para{
+
+            font-size: 11px;
+            
+            left: 0;
+            top: 0;}
+
+        .third-para{
+
+    padding-bottom: 20px;
+}
+
+        .space{margin-bottom:10;}
+
+        .bottom-section {
+           margin-top : 40px; 
+        }
+
+        p {
+            margin: 0;
+            margin-bottom: 34px;
+            line-height: 0.7;
+            margin-left: 40px;
+            font-size: 11px;
+        }
+     
+    </style>
+</head>
+<body>
+    @{
+        int i = 1;
+        Dictionary<int, string> chequeClass = new Dictionary<int, string>();
+        chequeClass.Add(1, "inner-wrapper class_A");
+        chequeClass.Add(2, "inner-wrapper class_B");
+        chequeClass.Add(3, "inner-wrapper class_C");
+    }
+        <div style="page-break-before: always; page-break-inside: initial" class="wrapper">
+            @foreach (var item in Model)
+            {
+                <div class="@chequeClass[i]">
+
+                    <div class="right-section">
+                        <div class="left-section"  style ="font-family : Arial;">
+                            <div class="first-section" style=" max-width: 200px; word-wrap: break-word;">
+                                @item.CustomerName<br />
+
+                                @item.FlatNo
+                                <div class="bottom-section">@item.Street <br />@item.Mobile </div>
+                            </div>
+                        </div>
+                        <div class="top-section" style="font-family : Arial;">
+
+                            @*<p class="first-para" style=" max-width: 200px; word-wrap: break-word;">@item.CustomerName</p>*@
+                            <p class="first-para" style=" max-width: 300px; word-wrap: break-word;">@item.CustomerName</p>
+
+                            <p class="second-para"> @item.AccountNo</p>
+                            <p class="third-para">@item.Branch.BranchName</p>
+
+                        </div>
+<div class="space"></div>
+
+                    </div>
+                </div>
+              
+                if (i == 3)
+                {
+                    //i = 0;
+                    i = 1;
+                }
+                else
+                {
+                    i++;
+                }
+                //if (i == 3)
+                //{
+                //    i = 0;
+                //}
+                //else
+                //{
+                //    i++;
+                //}
+            }
+        </div>
+</body>
+</html>
+
+
+
+
+
+
+
+    @*<div class="wrapper">
+        @foreach (var item in Model)
+        {
+            <div class="inside-wrapper">
+                @item.Branch.BranchName
+                <p class="top-text"> @item.AccountNo<br> @item.CustomerName</p>
+                <p class="bottom-text">
+                    @{ string res = "C" + item.ChequeNo1 + "C" + item.BankCode + "D" + item.Branch.BranchCode + "A" + item.AccountNo1 + "B";<span>@res</span>}
+            </div>
+
+        }
+
+    </div>*@
+
+<script type="text/javascript">
+    window.addEventListener('load', function () {
+        this.window.print();
+    })
+</script>
+
+
+

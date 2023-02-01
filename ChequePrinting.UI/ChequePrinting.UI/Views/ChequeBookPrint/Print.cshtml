@@ -1,0 +1,101 @@
+﻿@model IEnumerable<ChequePrinting.BusinessLogicLayer.ViewModel.ChequeBookViewModel>
+@{
+    Layout = "";
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <style type="text/css">
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .wrapper {
+            width: 724px;
+            margin: auto;
+        }
+
+            .wrapper .inside-wrapper {
+                height: 258px;
+                width: 100%;
+                margin-bottom: 72px;
+                padding-left: 25px;
+                padding-top: 20px;
+                text-align: center;
+                position: relative;
+            }
+
+        .inside-wrapper .top-text, .inside-wrapper .bottom-text {
+            position: absolute;
+            /*bottom: 55px;*/
+            bottom: 80px;
+            left: 60px;
+            text-align: left;
+        }
+
+        .inside-wrapper .bottom-text {
+            /*bottom: -40px;*/
+            bottom: -25px;
+        }
+
+        .inside-wrapper.class_A {
+            bottom: -15px;
+        }
+
+        .inside-wrapper.class_B {
+            bottom: -15px;
+        }
+
+
+        inside-wrapper.class_C .top-text {
+            /*bottom: 65px;*/
+            bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    @{
+        int i = 1;
+        Dictionary<int, string> chequeClass = new Dictionary<int, string>();
+        chequeClass.Add(1, "inside-wrapper class_A");
+        chequeClass.Add(2, "inside-wrapper class_B");
+        chequeClass.Add(3, "inside-wrapper class_C");
+    }
+    <div style="page-break-before: always; page-break-inside: initial" class="wrapper">
+        @foreach (var item in Model)
+        {
+            <div class="@chequeClass[i]">
+                @*@item.Branch.BranchName*@
+                <p class="top-text" style="font-family : Arial;font-size : 14px; max-width: 300px; word-wrap: break-word; "> @item.AccountNo<br> @item.CustomerName</p>
+                <p class="bottom-text" style="font-family: MICR Encoding Regular; font-size: 24px; font-weight: bold;  ">
+                    @{ string res = "C" + item.ChequeNo1 + "C" + item.BankCode + "D" + item.Branch.BranchCode + "A" + item.AccountNo1 + "B";<span>@res</span>}
+            </div>
+
+
+            @*text-shadow: 0px -1px #000000;*@
+
+            @*<div class="inside-wrapper">
+                    <p class="top-text">@item.ChequeNo1 </p>
+                    <p class="bottom-text">@item.CustomerName</p>
+                </div>*@
+            if (i == 3)
+            {
+                i = 1;
+            }
+            else
+            {
+                i++;
+            }
+                    }
+
+                </div>
+
+            </body>
+        </html>
+        <script type="text/javascript">
+            window.addEventListener('load', function () {
+                this.window.print();
+            })
+        </script>

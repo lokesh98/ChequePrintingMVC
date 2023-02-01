@@ -1,0 +1,90 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cheque Printing App</title>
+    @Styles.Render("~/Content/css")
+    @Styles.Render("~/Content/blockuiCss")
+    @Scripts.Render("~/bundles/modernizr")
+    @Scripts.Render("~/bundles/vuejs")
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/blockui")
+    <script type="text/javascript">
+        function success(message) {
+            $.growl.notice({ message: message, duration: 5000, size: 'large' });
+        }
+        function error_msg(error) {
+            $.growl.error({ message: error, duration: 5000, size: 'large' });
+        }
+        function warning(error) {
+            $.growl.warning({ message: error, duration: 5000, size: 'large' });
+        }
+        function getReturnURL() {
+            var name = "ReturnURL";
+            var url = window.location.href.toLowerCase();
+            name = name.replace(/[\[\]]/g, '\\$&').toLowerCase();
+            var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+                results = regex.exec(url);
+            if (!results) return null;
+            if (!results[2]) return '';
+            return decodeURIComponent(results[2].replace(/\+/g, ' '));
+        }
+        function logout() {
+            alert('Action cannot be completed. Your session is expired!!');
+            window.location.href = "/Account/LogOff";
+        }
+        function getBaseUrl() {
+            return location.protocol + '//' + location.host;
+        }
+    </script>
+</head>
+<body>
+    @if (Session["UserID"] != null)
+    {
+        <div class="navbar navbar-default navbar-fixed-top">
+            <div class="container">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <section class="navbar-brand"> Cheque Printing Application </section>
+                </div>
+                <div class="navbar-collapse collapse">
+
+                    @if (Session["UserID"] != null)
+                    {
+                        <ul class="nav navbar-nav">
+                            @{Html.RenderAction("GetMenuList", "Menu", new { area = "" });}
+                        </ul>
+                                }
+                    <ul class="nav navbar-nav navbar-right">
+                        @if (Session["UserID"] != null)
+                        {
+                            <li>
+                                <a> Welcome @Session["UserName"] !</a>
+                            </li>
+                            <li><a href="/Account/LogOff">|&nbsp;&nbsp;<b>Logout </b>|</a></li>
+                            <li><a>@DateTime.Now</a></li>
+                        }
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+                                }
+        <div class="container body-content">
+            @RenderBody()
+            <hr />
+            <footer>
+                <p>&copy; @DateTime.Now.Year - Standard Chartered</p>
+            </footer>
+        </div>
+
+
+        @Scripts.Render("~/bundles/bootstrap")
+        @RenderSection("scripts", required: false)
+    </body>
+</html>

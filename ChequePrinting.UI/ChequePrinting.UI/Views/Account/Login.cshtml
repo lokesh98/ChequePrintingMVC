@@ -1,0 +1,104 @@
+﻿<link href="~/Content/CustomCss/loginpage.css" rel="stylesheet" />
+<div id="app-login" class="login-form">
+    <form>
+        <div style="text-align:center"><img src="~/Content/Images/standard-chartered-latest-logo.png" /></div>
+        <br />
+        <h4 style="font-size: 17px; color: #418465">Cheque Printing Utility <br />(Log in with Secure Password)</h4>
+        <div class="form-group">
+            <input type="text" v-model="item.userId" v-on:keydown.enter.prevent='loginUser' class="form-control" placeholder="User ID" />
+            <span v-if="validation.userId" class="error"> {{validation.userId}}</span>
+        </div>
+        <div class="form-group">
+            <input type="password" v-model="item.password" class="form-control" placeholder="Password" />
+        </div>
+        <div class="form-group small clearfix">
+            <label class="form-check-label"><input v-model="item.rememberMe" type="checkbox"> Remember me</label>
+        </div>
+
+        <input type="button" v-on:click="loginUser()" class="btn btn-primary btn-block btn-lg" value="Login">
+    </form>
+    <div class="text-center small"></div>
+</div>
+
+<script type="text/javascript">
+    var vm = new Vue({
+        el: '#app-login',
+        components: {
+        },
+        data: {
+            ui: {
+                success: '',
+                error: '',
+                is_processing: false,
+            },
+            item: {
+                userId: '',
+                password: '',
+                rememberMe: false,
+            },
+            validation: {
+                userId: '',
+            }
+        },
+        created: function () {
+
+        },
+        methods: {
+            loginUser: function () {
+                if (this.ui.is_processing == true) return;
+                this.ValidationForm();
+
+                this.ui.is_processing = true;
+                blockUI();
+                $.ajax({
+                    method: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    url: "/Account/Login",
+                    data: JSON.stringify({ userId: vm.item.userId,password:vm.item.password, rememberMe: vm.item.rememberMe }),
+                }).done(function (response) {
+                    if (response.success == true) {
+                        var returnUrl = getReturnURL();
+                        if (returnUrl != '' && returnUrl != null) {
+                            window.location.href = returnUrl;
+                        }
+                        else if (response.result) {
+                            window.location.href = "/" + response.result;
+                        }
+                       
+                        else {
+                            window.location.href = "/DailyChequeBookPrintRpt/Index";
+                            //window.location.href = "/Home/Index";
+                        }
+
+                        success(response.message);
+                    } else {
+                        error_msg(response.message);
+                    }
+                    vm.ui.is_processing = false;
+                    $.unblockUI();
+                }).fail(function (xhr, status, error) {
+                    vm.ui.is_processing = false;
+                    error_msg(error);
+                    $.unblockUI();
+                })
+            },
+            ValidationForm: function () {
+                if (this.item.userId == '') {
+                    this.validation.userId = 'User Code is required';
+                }
+                else {
+                    this.validation.userId = '';
+                }
+            }
+        },
+        computed: {
+            isValid: function () {
+                if (this.validation.userId == '')
+                    return true;
+                else
+                    return false;
+            }
+
+        },
+    });
+</script>

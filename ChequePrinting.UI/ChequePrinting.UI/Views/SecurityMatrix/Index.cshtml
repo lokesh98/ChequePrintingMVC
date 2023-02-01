@@ -1,0 +1,166 @@
+﻿
+
+<div id="app-security-matrix">
+    <div class="row bg-title">
+        <div class="col-lg-8 col-md-6 col-sm-6 col-xs-12">
+            <h4 class="page-title" style="cursor: s-resize;">
+                <span>Security Matrix</span>
+                <img src="~/Content/Images/refreshing.gif" v-if="ui.is_loading" />
+            </h4>
+        </div>
+
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="col-md-12">
+                <button :disable="ui.is_exporting==true" type="button" :disabled="ui.is_exporting==true" style="float: right;" class="btn btn-success btn-sm" v-on:click="onExportClick()">
+                    Export To Excel
+                </button>
+            </div>
+        </div>
+    </div>
+    <br />
+    <div class="container">
+        <div class="row">
+            <table class="table table-bordered table-responsive">
+                <thead class="bg-primary text-white">
+                    <tr>
+                        <th>Role</th>
+                        <th>Main Menu</th>
+                        <th>Sub Menu</th>
+                    </tr>
+                </thead>
+                <tr v-for="(item, key) in master.security_matrix" :key="key">
+                    <td>{{item.Role}}</td>
+                    <td>{{item.MenuName}}</td>
+                    <td>{{item.SubMenu}}</td>
+                </tr>
+            </table>
+            <div class="row mt-1">
+                <div class="col-sm-6">
+                    <p class="no-data">{{showingMToNOfXPages}}</p>
+                </div>
+                <div class="col-sm-6">
+                    <div class="vue-pagination-wrap text-sm-right">
+                        <paginate :page-count="paginationNoOfPages"
+                                  :click-handler="onNewPageClicked"
+                                  :prev-text="'Prev'"
+                                  :next-text="'Next'"
+                                  v-model="search.CurrentPage"
+                                  :container-class="'pagination m-0'">
+                        </paginate>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    Vue.component('paginate', VuejsPaginate);
+    var vm = new Vue({
+        el: '#app-security-matrix',
+        components: {
+        },
+        data: {
+
+            ui: {
+                is_loading: false,
+                is_exporting: false
+            },
+            item: {
+                Role: '',
+                MenuName: '',
+                SubMenu: ''
+            },
+            master: {
+                security_matrix: []
+            },
+            search: {
+                CurrentPage: 1,
+                PerPage: 10,
+                Total: 0
+            },
+        },
+        created: function () {
+            this.getSecurityMatrixLists();
+        },
+        methods: {
+
+            getSecurityMatrixLists: function () {
+                if (this.ui.is_loading == true) return;
+                var vm = this;
+                this.ui.is_loading = true;
+                blockUI();
+                $.ajax({
+                    contentType: "application/json; charset=utf-8",
+                    url: "/SecurityMatrix/GetSecurityMatrixList",
+                    data: this.search
+                }).done(function (response) {
+                    if (response.message == "SESSION_EXPIRED") {
+                        return logout();
+                    }
+                    if (response.success == true) {
+                        vm.master.security_matrix = response.result;
+                        vm.search.Total = response.result2;
+                    } else {
+                        error_msg(response.message);
+                    }
+                    vm.ui.is_loading = false;
+                    $.unblockUI();
+                }).fail(function (xhr, status, error) {
+                    vm.ui.is_loading = false;
+                    error_msg(error);
+                    $.unblockUI();
+                })
+            },
+            onSearchClick: function () {
+                this.search.CurrentPage = 1;
+                this.getSecurityMatrixLists();
+            },
+            onNewPageClicked: function (page) {
+                this.search.CurrentPage = page;
+                this.getSecurityMatrixLists();
+            },
+            onExportClick: function () {
+                if (this.ui.is_exporting) return;
+                this.ui.is_exporting = true;
+                $.ajax({
+                    method: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    url: "/SecurityMatrix/ExportToExcel",
+                    data: JSON.stringify(this.search),
+                }).done(function (response) {
+                    if (response.success == true) {
+                        vm.ui.is_exporting = false;
+                        window.location = '/SecurityMatrix/Download';
+                    } else {
+                        vm.ui.is_exporting = false;
+                        error_msg(response.message);
+                    }
+                    vm.ui.is_exporting = false;
+                }).fail(function (xhr, status, error) {
+                    error_msg(error);
+                    vm.ui.is_exporting = false;
+                })
+            },
+        },
+        computed: {
+            paginationNoOfPages: function () {
+                var mod = this.search.Total % this.search.PerPage;
+                var count = parseInt(this.search.Total / this.search.PerPage);
+                if (mod == 0) return count;
+                else return count + 1;
+            },
+            showingMToNOfXPages: function () {
+                if (this.search.Total == 0) return "No record found";
+                var M = (this.search.CurrentPage - 1) * this.search.PerPage + 1;
+                var N = this.search.CurrentPage * this.search.PerPage;
+                if (N > this.search.Total) N = this.search.Total;
+                var X = this.search.Total;
+                return "Showing " + M + " to " + N + " of " + X + " records";
+            },
+        }
+    });
+</script>
+

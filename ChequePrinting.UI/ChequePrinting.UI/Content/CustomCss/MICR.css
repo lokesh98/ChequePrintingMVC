@@ -1,0 +1,12 @@
+﻿
+
+
+@font-face {
+    font-family: 'MICR';
+    src: local('MICR'),url('../fonts/MICR.ttf') format('truetype');
+    src: local('MICR'),url('../fonts/MICR.ttf');
+}
+.micr {
+    font-family: 'MICR';
+    bottom: -25px;
+}

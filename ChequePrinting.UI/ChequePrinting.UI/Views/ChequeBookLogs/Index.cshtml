@@ -1,0 +1,378 @@
+﻿<style type="text/css">
+    th, td {
+        /*use this property to disbale soft wrap*/
+        white-space: nowrap;
+        /*To make extra certain,add this css property*/
+        word-break: keep-all;
+    }
+</style>
+<div id="app-cheque-book-logs">
+    <div class="row bg-title">
+        <div class="col-lg-8 col-md-6 col-sm-6 col-xs-12">
+            <h4 class="page-title">
+                <span>Cheque Book Issue Record Download</span>
+                <img src="~/Content/Images/refreshing.gif" v-if="ui.is_loading" />
+            </h4>
+        </div>
+        <div class="col-lg-4 col-md-6 col-sm-6 col-xs-12">
+            <ul class="nav nav-pills pull-right" role="tablist">
+                <li class="nav-item" role="presentation">
+                </li>
+            </ul>
+        </div>
+    </div>
+
+
+
+
+
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="form-group col-md-5">
+                <label class="control-label col-md-4">Document / File</label>
+                <div class="col-md-3">
+                    <input type="file" id="fileName" style="cursor:pointer" v-on:change="onFileChange($event)" />
+                    <span v-if="ui.is_uploading" style="color:green">Uploading..... </span>
+                    <img v-if="ui.is_uploading" src="~/Content/Images/refreshing.gif" />
+                </div>
+            </div>
+            <div class="col-md-1">
+                <input type="button" v-on:click="uploadDocument()" class="btn btn-sm btn-success" value="Upload" />
+            </div>
+           
+            <div class="col-md-6">
+               
+                <input type="button" class="btn btn-success btn-sm" value="Download Cheque Book Logs" v-on:click="onDownloadChequeBookLogs()" />
+                <input type="button" class="btn btn-success btn-sm" value="Post Batch" v-on:click="onPostBatchClick()" />
+                <img src="~/Content/Images/refreshing.gif" v-if="ui.is_downloading" />
+                <input type="button" id="btnReset" class="btn btn-danger btn-sm resetform" value="Clear Download" v-on:click="onClearDownload()" />
+            </div>
+            </div>
+        </div><br />
+    <br />
+    <div class="container" style="overflow-x: scroll">
+        <div class="row">
+            <div class="scrollme">
+                <table class="table table-bordered table-responsive">
+                    <thead class="bg-primary text-white">
+                        <tr>
+                            <th></th>
+                            <th>Currency Code</th>
+                            <th>Account No</th>
+                            <th>Branch Name</th>
+                            <th>Full Name</th>
+                            <th>Relationship No</th>
+                            <th>Relationship Type</th>
+                            <th>Cheque Start No</th>
+                            <th>Issue Date</th>
+                            <th>Req ID</th>
+                            <th>No of Leaves</th>
+                            <th>Book Status</th>
+                            <th>Maker ID</th>
+                            <th>Maker DateTime</th>
+                            <th>Checker ID</th>
+                            <th>Checker DateTime</th>
+                            <th>Checker IP Addr</th>
+                            <th>Status Flag</th>
+                            <th>Print Date</th>
+                            <th>NoOf Times Printed</th>
+                            <th>Flat No</th>
+                            <th>BLDGName</th>
+                            <th>NRLandMark</th>
+                            <th>Street</th>
+                            <th>TRS</th>
+                            <th>Mobile</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tr v-for="(item, key) in master.cheque_book_logs" :key="key">
+                        <td>
+                            <input type="checkbox" v-model="item.UI_Checked" />
+                        </td>
+                        <td>{{item.CurrencyCode}}</td>
+                        <td>{{item.AccountNo}}</td>
+                        <td>{{item.Branch.BranchName}}</td>
+                        <td>{{item.FullName}}</td>
+                        <td>{{item.RelationShipNo}}</td>
+                        <td>{{item.RelationShipType}}</td>
+                        <td>{{item.ChequeStartNo}}</td>
+                        <td>{{item.IssueDate}}</td>
+                        <td>{{item.ReqID}}</td>
+                        <td>{{item.NoOfLeaves}}</td>
+                        <td>{{item.BookStatus}}</td>
+                        <td>{{item.MakerID}}</td>
+                        <td>{{item.MakerDateTime}}</td>
+                        <td>{{item.CheckerID}}</td>
+                        <td>{{item.CheckerDateTime}}</td>
+                        <td>{{item.CheckerIPAddress}}</td>
+                        <td>{{item.StatusFlag}}</td>
+                        <td>{{item.PrintDate}}</td>
+                        <td>{{item.CNoOfPrint}}</td>
+                        <td>{{item.FlatNo}}</td>
+                        <td>{{item.BldgName}}</td>
+                        <td>{{item.NrLandMark}}</td>
+                        <td>{{item.Street}}</td>
+                        <td>{{item.TRS}}</td>
+                        <td>{{item.Mobile}}</td>
+                        <td>
+                            <a href="javascript:void(0)">Print</a>
+                        </td>
+
+                    </tr>
+                </table>
+            </div>
+            <div class="row mt-1">
+                <div class="col-sm-6">
+                    <p class="no-data">{{showingMToNOfXPages}}</p>
+                </div>
+                <div class="col-sm-6">
+                    <div class="vue-pagination-wrap text-sm-right">
+                        <paginate :page-count="paginationNoOfPages"
+                                  :click-handler="onNewPageClicked"
+                                  :prev-text="'Prev'"
+                                  :next-text="'Next'"
+                                  v-model="search.CurrentPage"
+                                  :container-class="'pagination m-0'">
+                        </paginate>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<script type="text/javascript">
+
+
+
+
+    Vue.component('paginate', VuejsPaginate);
+    var vm = new Vue({
+        el: '#app-cheque-book-logs',
+        components: {
+        },
+        data: {
+
+            ui: {
+                is_loading: false,
+                is_downloading: false,
+                is_uploading: false
+            },
+            master: {
+                cheque_book_logs: []
+            },
+            search: {
+                CurrentPage: 1,
+                PerPage: 10000,
+                Total: 0
+            },
+            page: {
+                Document: '',
+                DocumentName: '',
+                DocumentType: '',
+                DocumentSize: 0
+            },
+
+        },
+        created: function () {
+            this.getBufferLogs();
+        },
+        methods: {
+            uploadDocument: function () {
+                if (this.page.DocumentName.trim() == '') {
+                    error_msg('Please upload file before proceeding.');
+                    return;
+                }
+                if (this.ui.is_uploading) {
+                    return;
+                }
+                this.ui.is_uploading = true;
+                $.ajax({
+                    method: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    url: "/ChequeBookLogs/DB2Upload",
+                    data: JSON.stringify(this.page),
+                }).done(function (response) {
+                    if (response.success == true) {
+                        success(response.message);
+                        vm.ui.is_loading = false;
+                        vm.clearForm();
+                    } else {
+                        error_msg(response.message);
+                    }
+                    vm.ui.is_uploading = false;
+                }).fail(function (xhr, status, error) {
+                    vm.ui.is_uploading = false;
+                    error_msg(error);
+                })
+
+            },
+            onFileChange: function (event) {
+                var files = event.target.files || event.dataTransfer.files;
+                if (!files.length)
+                    return;
+                this.page.DocumentName = files[0].name;
+                this.page.DocumentSize = files[0].size;
+                this.page.DocumentType = files[0].type;
+                var that = this;
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    vm.page.Document = e.target.result;
+                };
+                reader.readAsDataURL(files[0]);
+            },
+            clearForm: function () {
+                $("#fileName").val(null);
+                this.page.Document = '';
+                this.page.DocumentName = '';
+                this.page.DocumentType = '';
+                this.page.DocumentSize = 0;
+            },
+            getBufferLogs: function () {
+                if (this.ui.is_loading == true) return;
+                this.ui.is_loading = true;
+                blockUI();
+                $.ajax({
+                    method: "GET",
+                    contentType: "application/json; charset=utf-8",
+                    url: "/ChequeBookLogs/GetBufferLogs",
+                    data: this.search
+                }).done(function (response) {
+                    if (response.message == "SESSION_EXPIRED") {
+                        return logout();
+                    }
+                    if (response.success == true) {
+                        vm.master.cheque_book_logs = response.result;
+                        if (vm.master.cheque_book_logs.length > 0) {
+                            for (var i = 0; i < vm.master.cheque_book_logs.length; i++) {
+                                vm.$set(vm.master.cheque_book_logs[i], "UI_Checked", false);
+                            }
+                        }
+                        vm.search.Total = response.result2;
+                    } else {
+                        error_msg(response.message);
+                    }
+                    vm.ui.is_loading = false;
+                    $.unblockUI();
+                }).fail(function (xhr, status, error) {
+                    vm.ui.is_loading = false;
+                    error_msg(error);
+                    $.unblockUI();
+                })
+            },
+
+            onNewPageClicked: function (page) {
+                this.search.CurrentPage = page;
+                this.getBufferLogs();
+            },
+            onDownloadChequeBookLogs: function () {
+                if (this.ui.is_downloading) return;
+                this.ui.is_downloading = true;
+                blockUI();
+                $.ajax({
+                    method: "GET",
+                    contentType: "application/json; charset=utf-8",
+                    url: "/ChequeBookLogs/DownloadChequeBookLogs",
+                }).done(function (response) {
+                    if (response.message == "SESSION_EXPIRED") {
+                        return logout();
+                    }
+                    if (response.success == true) {
+                        success('Logs download completed successfully.');
+                        vm.getBufferLogs();
+                    } else {
+                        error_msg(response.message);
+                    }
+                    vm.ui.is_downloading = false;
+                    $.unblockUI();
+                }).fail(function (xhr, status, error) {
+                    error_msg(error);
+                    $.unblockUI();
+                    vm.ui.is_downloading = false;
+                })
+            },
+            onClearDownload: function () {
+                if (confirm("Are you sure to Rollback the Batch?")) {
+                    if (this.ui.is_downloading) return;
+                    this.ui.is_downloading = true;
+                    blockUI();
+                    $.ajax({
+                        method: "POST",
+                        contentType: "application/json; charset=utf-8",
+                        url: "/ChequeBookLogs/ClearDownload",
+                    }).done(function (response) {
+                        if (response.message == "SESSION_EXPIRED") {
+                            return logout();
+                        }
+                        if (response.success == true) {
+                            success('Cheque Book Issue Logs Cleared Successfully.');
+                            vm.getBufferLogs();
+                        } else {
+                            error_msg(response.message);
+                        }
+                        vm.ui.is_downloading = false;
+                        $.unblockUI();
+                    }).fail(function (xhr, status, error) {
+                        error_msg(error);
+                        $.unblockUI();
+                        vm.ui.is_downloading = false;
+                    })
+                }
+            },
+            onPostBatchClick: function () {
+                if (this.ui.is_downloading) return;
+                if (vm.master.cheque_book_logs.length == 0) {
+                    warning("No Cheque Book Issue Logs found to post.");
+                    return false;
+                }
+                if (confirm("Are you sure to Post the Cheque Issue Logs for Printing?")) {
+                    this.ui.is_downloading = true;
+                    blockUI();
+                    $.ajax({
+                        method: "POST",
+                        contentType: "application/json; charset=utf-8",
+                        url: "/ChequeBookLogs/PostBatch",
+                    }).done(function (response) {
+                        if (response.message == "SESSION_EXPIRED") {
+                            return logout();
+                        }
+                        if (response.success == true) {
+                            success('Cheque Book Issue Logs Posted Successfully.');
+                            vm.getBufferLogs();
+                        } else {
+                            error_msg(response.message);
+                        }
+                        vm.ui.is_downloading = false;
+                        $.unblockUI();
+                    }).fail(function (xhr, status, error) {
+                        error_msg(error);
+                        $.unblockUI();
+                        vm.ui.is_downloading = false;
+                    })
+                }
+            }
+        },
+        computed: {
+
+            paginationNoOfPages: function () {
+                var mod = this.search.Total % this.search.PerPage;
+                var count = parseInt(this.search.Total / this.search.PerPage);
+                if (mod == 0) return count;
+                else return count + 1;
+            },
+            showingMToNOfXPages: function () {
+                if (this.search.Total == 0) return "No record found";
+                var M = (this.search.CurrentPage - 1) * this.search.PerPage + 1;
+                var N = this.search.CurrentPage * this.search.PerPage;
+                if (N > this.search.Total) N = this.search.Total;
+                var X = this.search.Total;
+                return "Showing " + M + " to " + N + " of " + X + " records";
+            },
+
+        }
+    });
+
+</script>

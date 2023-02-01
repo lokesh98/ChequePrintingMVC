@@ -1,0 +1,186 @@
+﻿<div class="row" id="app-access-mgmt">
+    <div class="tab-content">
+        <div class="col-md-12 col-lg-12 col-sm-12">
+            <div class="white-box">
+                <div class="panel-body">
+                    <div class="panel-body">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="col-md-2">User Group</label>
+                                <div class="col-md-5">
+                                    <select v-on:change="getMenuItems()" v-model="page.user_group" class="form-control input-sm">
+                                        <option value="">Select UserGroup</option>
+                                        <option v-for="(p,key1) in master.user_roles" :value="p.RoleName">{{p.RoleName}}</option>
+                                    </select>
+                                </div>
+                                <img src="~/Content/Images/refreshing.gif" v-if="ui.is_loading" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div v-for="(parentItem,parentKey) in parentMenu">
+
+                        <div class="form-group" id="ItemList">
+                            <div class="checkbox" style="margin-left:20%; cursor:pointer">
+                                <label class="control-label">
+                                    <input type="checkbox" checked="parentItem.UI_IsChecked==true" v-model="parentItem.UI_IsChecked" autocomplete="off">
+                                    <span style="font-size:14px"><strong>{{parentItem.MenuName}}</strong></span>
+                                </label>
+                                <div style="margin-left:10%">
+
+                                    <div class="row">
+                                        <div class="form-group col-md-6" v-for="(childItem,childKey) in master.menu_items.filter(x=>x.MenuParentId==parentItem.MenuId)">
+                                            <label class="control-label">
+                                                <input type="checkbox" name="sub_access" checked="childItem.UI_IsChecked==true" v-model="childItem.UI_IsChecked"> {{childItem.MenuName}}
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    <span v-if="checkedMenuItems.length>0" style="color:green">Total {{checkedMenuItems.length}} items checked.</span>
+                    <div class="pull-right">
+                        <button :disabled="checkedMenuItems.length==0 || ui.is_saving==true" type="button" v-on:click="onSaveClick()" class="btn btn-primary">Save</button>
+                        <img src="~/Content/Images/refreshing.gif" v-if="ui.is_saving" />
+                        <input type="reset" v-on:click="onCancelClick()" value="Cancel" class="btn btn-danger" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    var vm = new Vue({
+        el: '#app-access-mgmt',
+        components: {
+        },
+        data: {
+            ui: {
+                is_loading: false,
+                is_saving: false
+            },
+            master: {
+                menu_items: [],
+                user_roles: []
+            },
+            page: {
+                user_group: ''
+            }
+
+        },
+        created: function () {
+            this.getUserRole();
+        },
+        methods: {
+
+            getUserRole: function () {
+                $.ajax({
+                    method: "GET",
+                    contentType: "application/json; charset=utf-8",
+                    url: "/MenuAccess/GetUserRoles"
+                }).done(function (response) {
+                    if (response.message == "SESSION_EXPIRED") {
+                        return logout();
+                    }
+                    if (response.success == true) {
+                        vm.master.user_roles = response.result;
+                    } else {
+                        error_msg(response.message);
+                    }
+                }).fail(function (xhr, status, error) {
+                    error_msg(error);
+                })
+            },
+
+            getMenuItems: function () {
+                if (this.ui.is_loading == true) return;
+                if (this.page.user_group == '') return;
+                var vm = this;
+                this.ui.is_loading = true;
+                blockUI();
+                $.ajax({
+                    method: "GET",
+                    contentType: "application/json; charset=utf-8",
+                    url: "/MenuAccess/GetMenuItems",
+                    data: { userGroup: vm.page.user_group }
+                }).done(function (response) {
+                    if (response.message == "SESSION_EXPIRED") {
+                        return logout();
+                    }
+                    if (response.success == true) {
+                        vm.master.menu_items = response.result;
+                        var result2 = response.result2;
+                        for (var i = 0; i < vm.master.menu_items.length; i++) {
+
+                            var data = result2.find(x => x.MenuId == vm.master.menu_items[i].MenuId);
+                            if (data) {
+                                vm.$set(vm.master.menu_items[i], "UI_IsChecked", true);
+                            } else {
+                                vm.$set(vm.master.menu_items[i], "UI_IsChecked", false);
+                            }
+                        }
+                    } else {
+                        error_msg(response.message);
+                    }
+                    vm.ui.is_loading = false;
+                    $.unblockUI();
+                }).fail(function (xhr, status, error) {
+                    vm.ui.is_loading = false;
+                    error_msg(error);
+                    $.unblockUI();
+                })
+            },
+
+            onSaveClick: function () {
+                if (this.ui.is_saving) return;
+                this.ui.is_saving = true;
+
+                $.ajax({
+                    method: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    url: "/MenuAccess/SaveMenuMapping",
+                    data: JSON.stringify({menuItems: vm.checkedMenuItems, userGroup: vm.page.user_group }),
+                }).done(function (response) {
+                    if (response.success) {
+                        success('Menu access saved successfully.');
+
+                        setTimeout(function() {location.reload();}, 1000);
+
+                    } else {
+                        warning(response.message);
+                    }
+                    vm.ui.is_saving = false;
+                }).fail(function (xhr, status, error) {
+                    vm.ui.is_saving = false;
+                    error_msg(error);
+                })
+            },
+            onCancelClick: function () {
+                this.page.user_group = '';
+                this.master.menuItems = [];
+            }
+        },
+        computed: {
+            parentMenu: function () {
+                if (!this.master.menu_items.length) return [];
+                var main_menu = this.master.menu_items.filter(x => x.MenuParentId == 0);
+                main_menu = main_menu.sort((a, b) => Number(a.MenuParentId) - Number(b.MenuParentId));
+                return main_menu;
+            },
+
+            checkedMenuItems: function () {
+                if (!this.master.menu_items.length) return [];
+                var checkedItems = this.master.menu_items.filter(x => x.UI_IsChecked == true);
+                return checkedItems;
+            }
+        }
+    });
+
+</script>
+
+

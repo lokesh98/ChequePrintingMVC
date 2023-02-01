@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31911.196
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChequePrinting.UI", "ChequePrinting.UI\ChequePrinting.UI.csproj", "{64EDD90F-EE13-4A51-889F-08F723BBEDC1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChequePrinting.BusinessLogicLayer", "..\ChequePrinting.BusinessLogicLayer\ChequePrinting.BusinessLogicLayer.csproj", "{41537A49-42D6-4513-886B-E211F10119E7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChequePrinting.DataAccessLayer", "..\ChequePrinting.DataAccessLayer\ChequePrinting.DataAccessLayer.csproj", "{D52135C2-E96E-437C-91EB-B63640A0461A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChequePrinting.Tests", "ChequePrinting.Tests\ChequePrinting.Tests.csproj", "{954A950B-6979-42C1-87EF-62495ACD3C50}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{64EDD90F-EE13-4A51-889F-08F723BBEDC1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{64EDD90F-EE13-4A51-889F-08F723BBEDC1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{64EDD90F-EE13-4A51-889F-08F723BBEDC1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{64EDD90F-EE13-4A51-889F-08F723BBEDC1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{41537A49-42D6-4513-886B-E211F10119E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{41537A49-42D6-4513-886B-E211F10119E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{41537A49-42D6-4513-886B-E211F10119E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{41537A49-42D6-4513-886B-E211F10119E7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D52135C2-E96E-437C-91EB-B63640A0461A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D52135C2-E96E-437C-91EB-B63640A0461A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D52135C2-E96E-437C-91EB-B63640A0461A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D52135C2-E96E-437C-91EB-B63640A0461A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{954A950B-6979-42C1-87EF-62495ACD3C50}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{954A950B-6979-42C1-87EF-62495ACD3C50}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{954A950B-6979-42C1-87EF-62495ACD3C50}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{954A950B-6979-42C1-87EF-62495ACD3C50}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {32B7EC5C-3BF9-4069-AF3B-C73CC8918002}
+	EndGlobalSection
+EndGlobal

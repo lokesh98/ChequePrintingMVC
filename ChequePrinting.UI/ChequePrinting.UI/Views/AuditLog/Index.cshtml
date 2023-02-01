@@ -1,0 +1,248 @@
+﻿<div id="app-audit-log">
+    <div class="row bg-title">
+        <div class="col-lg-8 col-md-6 col-sm-6 col-xs-12">
+            <h4 class="page-title" style="cursor: s-resize;">
+                <span>Audit Log Report</span>
+                <img src="~/Content/Images/refreshing.gif" v-if="ui.is_loading" />
+            </h4>
+        </div>
+
+        <div class="col-lg-4 col-md-6 col-sm-6 col-xs-12">
+            <ul class="nav nav-pills pull-right" role="tablist">
+                <li class="nav-item" role="presentation">
+                    @*<a href="javascript:void(0)" class="nav-link bg-primary" v-on:click="showModal()">Create New</a>*@
+                </li>
+            </ul>
+
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="control-label col-md-4">From</label>
+                    <div class="col-md-8">
+                        <input type="text" id="txtFromDate" class="form-control input-sm" autocomplete="off" v-model="search.FromDate" />
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="control-label col-md-3">To</label>
+                    <div class="col-md-8">
+                        <input type="text" id="txtToDate" class="form-control input-sm" autocomplete="off" v-model="search.ToDate" />
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="control-label col-md-3">User ID</label>
+                    <div class="col-md-8">
+                        <input type="text" class="form-control input-sm" placeholder="User ID" autocomplete="off" v-model="search.UserId" />
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+
+                <button type="button" :disabled="ui.is_loading==true" class="btn btn-primary btn-sm" v-on:click="onSearchClick()">
+                    {{ui.is_loading==true? 'Searching...':'Search'}}
+                </button>
+                <button :disable="ui.is_exporting==true" type="button" :disabled="ui.is_loading==true" class="btn btn-success btn-sm" v-on:click="onExport()">
+                    Export To Excel
+                </button>
+                <img src="~/Content/Images/refreshing.gif" v-if="ui.is_exporting" />
+                <input type="button" id="btnReset" class="btn btn-danger btn-sm resetform" value="Reset" v-on:click="onResetClick()" />
+            </div>
+        </div>
+    </div><br />
+    <div class="container">
+        <div class="row">
+            <table class="table table-bordered table-responsive">
+                <thead class="bg-primary text-white">
+                    <tr>
+                        <th>Login TimeStamp</th>
+                        <th>IP Address</th>
+                        <th>User Id</th>
+                        <th>Machine Name</th>
+                        <th>Event</th>
+                        <th>URL</th>
+                        <th>Event Desc</th>
+                    </tr>
+                </thead>
+                <tr v-for="(item, key) in master.audit_logs" :key="key">
+                    <td>{{item.TimeStamp}}</td>
+                    <td>{{item.IPAddress}}</td>
+                    <td>{{item.UserId}}</td>
+                    <td>{{item.MachineName}}</td>
+                    <td>{{item.ActionPerformed}}</td>
+                    <td>{{item.Url}}</td>
+                    <td>{{item.ActionDesc}}</td>
+                </tr>
+            </table>
+            <div class="row mt-1">
+                <div class="col-sm-6">
+                    <p class="no-data">{{showingMToNOfXPages}}</p>
+                </div>
+                <div class="col-sm-6">
+                    <div class="vue-pagination-wrap text-sm-right">
+                        <paginate :page-count="paginationNoOfPages"
+                                  :click-handler="onNewPageClicked"
+                                  :prev-text="'Prev'"
+                                  :next-text="'Next'"
+                                  v-model="search.CurrentPage"
+                                  :container-class="'pagination m-0'">
+                        </paginate>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script type="text/javascript">
+    Vue.component('paginate', VuejsPaginate);
+    var vm = new Vue({
+        el: '#app-audit-log',
+        components: {
+        },
+        data: {
+
+            ui: {
+                is_loading: false,
+                is_saving: false,
+                is_exporting:false
+            },
+            master: {
+                audit_logs: []
+            },
+            search: {
+                FromDate: '',
+                ToDate: '',
+                UserId:'',
+                CurrentPage: 1,
+                PerPage: 10000,
+                Total: 0
+            }
+
+        },
+        created: function () {
+            this.search.FromDate ='@Html.Raw(DateTime.Now.AddDays(-7).ToString("yyyy-MM-dd"))';
+            this.search.ToDate =  '@Html.Raw(DateTime.Now.ToString("yyyy-MM-dd"))';
+            this.getAuditLogs();
+        },
+        methods: {
+
+            getAuditLogs: function () {
+                if (this.ui.is_loading == true) return;
+                var vm = this;
+                this.ui.is_loading = true;
+                blockUI();
+                $.ajax({
+                    method: "GET",
+                    contentType: "application/json; charset=utf-8",
+                    url: "/AuditLog/GetAuditLogs",
+                    data: this.search,
+                }).done(function (response) {
+                    if (response.success == true) {
+                        vm.master.audit_logs = response.result;
+                        vm.search.Total = response.result2;
+                    } else {
+                        error_msg(response.message);
+                    }
+                    vm.ui.is_loading = false;
+                    $.unblockUI();
+                }).fail(function (xhr, status, error) {
+                    vm.ui.is_loading = false;
+                    error_msg(error);
+                    $.unblockUI();
+                })
+            },
+            onSearchClick: function () {
+                this.search.CurrentPage = 1;
+                this.getAuditLogs();
+            },
+            onNewPageClicked: function (page) {
+                this.search.CurrentPage = page;
+                this.getAuditLogs();
+            },
+            onResetClick: function () {
+                this.search.FromDate ='@Html.Raw(DateTime.Now.AddDays(-7).ToString("yyyy-MM-dd"))';
+                this.search.ToDate =  '@Html.Raw(DateTime.Now.ToString("yyyy-MM-dd"))';
+                this.search.UserId = '';
+                this.search.CurrentPage = 1;
+                this.search.PerPage = 10;
+                this.search.Total = 0;
+                this.getAuditLogs();
+            },
+            onExport: function () {
+                if (this.ui.is_exporting) return;
+                this.ui.is_exporting = true;
+                $.ajax({
+                    method: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    url: "/AuditLog/ExportToExcel",
+                    data: JSON.stringify(this.search),
+                }).done(function (response) {
+                    if (response.success == true) {
+                        vm.ui.is_exporting = false;
+                        window.location = '/AuditLog/Download';
+                    } else {
+                        vm.ui.is_exporting = false;
+                        error_msg(response.message);
+                    }
+                    vm.ui.is_exporting = false;
+                }).fail(function (xhr, status, error) {
+                    error_msg(error);
+                    vm.ui.is_exporting = false;
+                })
+            }
+
+        },
+        computed: {
+
+            paginationNoOfPages: function () {
+                var mod = this.search.Total % this.search.PerPage;
+                var count = parseInt(this.search.Total / this.search.PerPage);
+                if (mod == 0) return count;
+                else return count + 1;
+            },
+            showingMToNOfXPages: function () {
+                if (this.search.Total == 0) return "No record found";
+                var M = (this.search.CurrentPage - 1) * this.search.PerPage + 1;
+                var N = this.search.CurrentPage * this.search.PerPage;
+                if (N > this.search.Total) N = this.search.Total;
+                var X = this.search.Total;
+                return "Showing " + M + " to " + N + " of " + X + " records";
+            },
+        }
+    });
+    $(function () {
+        setDatePicker();
+        setModalDatePicker();
+    });
+    function setDatePicker() {
+        $('#txtFromDate').datepicker({
+            format: 'yyyy-mm-dd',
+            autoclose: true,
+            todayHighlight: true,
+            minViewMode: 0
+        }).on('changeDate', function (e) {
+            vm.search.FromDate = e.format('yyyy-mm-dd');
+            vm.onSearchClick();
+        });
+        $('#txtFromDate').val(vm.search.FromDate);
+    }
+    function setModalDatePicker() {
+        $('#txtToDate').datepicker({
+            format: 'yyyy-mm-dd',
+            autoclose: true,
+            todayHighlight: true,
+            minViewMode: 0
+        }).on('changeDate', function (e) {
+            vm.search.ToDate = e.format('yyyy-mm-dd');
+        });
+        $('#txtToDate').val(vm.search.ToDate);
+    }
+</script>
+
